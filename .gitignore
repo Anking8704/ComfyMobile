@@ -3,5 +3,4 @@ build/
 *.keystore
 local.properties
 .superpowers/
-output/*.apk
-output/*.idsig
+output/
