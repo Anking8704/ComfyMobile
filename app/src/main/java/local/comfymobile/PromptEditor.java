@@ -212,14 +212,21 @@ final class PromptEditor {
         render.run();
     }
     private void editLibraryItem(String key,int index,JSONArray values){
-        EditText input=Ui.input(activity,"分类 / 词句内容",true);if(index>=0)input.setText(values.optString(index));
-        new AlertDialog.Builder(activity).setTitle("编辑收藏").setView(input)
+        String original=index>=0?values.optString(index):null;
+        EditText input=Ui.input(activity,"分类 / 词句内容",true);if(original!=null)input.setText(original);
+        AlertDialog.Builder dialog=new AlertDialog.Builder(activity).setTitle("编辑收藏").setView(input)
             .setPositiveButton("保存",(d,w)->{
                 String value=input.getText().toString().trim();if(value.isEmpty())return;
-                JSONArray next=new JSONArray();for(int i=0;i<values.length();i++)next.put(i==index?value:values.optString(i));if(index<0)next.put(value);
-                prefs.edit().putString(key,next.toString()).apply();
-            }).setNeutralButton("删除",(d,w)->{JSONArray next=new JSONArray();for(int i=0;i<values.length();i++)if(i!=index)next.put(values.optString(i));prefs.edit().putString(key,next.toString()).apply();})
-            .setNegativeButton("取消",null).show();
+                updateSavedItem(key,original,value);
+            }).setNegativeButton("取消",null);
+        if(original!=null)dialog.setNeutralButton("删除",(d,w)->updateSavedItem(key,original,null));dialog.show();
+    }
+    private void updateSavedItem(String key,String original,String replacement){
+        JSONArray current=items(key);java.util.ArrayList<String> latest=new java.util.ArrayList<>();for(int i=0;i<current.length();i++)latest.add(current.optString(i));
+        try{
+            java.util.List<String> edited=PresetList.edit(latest,original,replacement);JSONArray next=new JSONArray();for(String value:edited)next.put(value);
+            prefs.edit().putString(key,next.toString()).apply();
+        }catch(IllegalStateException e){activity.message(e.getMessage());}
     }
     private void save(){
         persist();if(target==null){activity.message("请先选择工作流中的目标字段，草稿已经保存在手机");return;}

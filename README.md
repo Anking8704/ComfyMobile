@@ -2,7 +2,7 @@
 
 连接家中电脑 ComfyUI 的安卓客户端。电脑运行现有模型和节点，手机编辑工作流、输入提示词、查看任务和保存原图。Android 10 或以上，需要更新的系统 Android WebView。
 
-这是可安装的首个本地开发版本，已构建并通过签名和主机端逻辑验证；尚未在安卓真机或模拟器完成端到端测试。设计参考图不是 APP 实测截图。第三方节点的特殊前端界面需要实际工作流验证，不能保证所有插件都已适配触屏。
+这是可安装的本地开发版本，已构建并通过签名和主机端逻辑验证；尚未在安卓真机或模拟器完成端到端测试。设计参考图不是 APP 实测截图。第三方节点的特殊前端界面需要实际工作流验证，不能保证所有插件都已适配触屏。
 
 ## 安装与连接
 
@@ -65,7 +65,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build.ps1 -TestOnly
 ```
 
-输出为 `output/ComfyMobile-0.2.0.apk`。测试和构建记录见 `docs/verification.md`，设计和实施计划见 `docs/superpowers/`。
+输出为 `output/ComfyMobile-0.2.0.apk`。本版测试和构建记录见 `docs/v0.2.0-verification.md`，初版记录见 `docs/verification.md`，设计和实施计划见 `docs/superpowers/`。
 
 ## 技术资料
 

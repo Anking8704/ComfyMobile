@@ -122,9 +122,9 @@ test('search inputs and string dropdowns never trigger prompt-page navigation',a
   assert.equal((await f.bridge.drainEvents()).events.length,0);
 });
 test('focus fallback deduplicates a pointer handoff for the same field',async()=>{
-  const f=fixture();const input={closest(){return this;},blur(){}};f.widget.element=input;
-  f.domListeners.get('pointerdown')?.({target:input,preventDefault(){},stopImmediatePropagation(){}});
-  f.domListeners.get('focusin')?.({target:input});
+  const f=fixture();let blurred=false;const input={closest(){return this;},blur(){blurred=true;}};f.widget.element=input;
+  f.domListeners.get('pointerdown')?.({type:'pointerdown',target:input,preventDefault(){},stopImmediatePropagation(){}});
+  f.domListeners.get('focusin')?.({type:'focusin',target:input});assert.equal(blurred,true);
   assert.equal((await f.bridge.drainEvents()).events.filter(e=>e.type==='edit_field').length,1);
 });
 test('frontend initialization focusing a widget does not open the native prompt page',async()=>{

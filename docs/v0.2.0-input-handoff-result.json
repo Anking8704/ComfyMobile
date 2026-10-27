@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "viewport": [
+    915,
+    412
+  ],
+  "checks": [
+    "real CLIP pointer intercepted before web keyboard",
+    "exact node/widget handoff",
+    "English field writeback",
+    "search inputs untouched",
+    "focus fallback releases web input"
+  ],
+  "widgetType": "customtext"
+}
