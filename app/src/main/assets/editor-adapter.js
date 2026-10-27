@@ -68,35 +68,85 @@
     events.push({ type, data });
     if (events.length > 50) events.shift();
   }
-  let lastEditToken='',lastEditAt=0,lastInteractionAt=0;
+  let lastEditToken='',lastEditAt=0,lastPointerAt=0,lastKeyAt=0,tap=null,lastTap=null;
+  const TAP_MOVE=14,TAP_TIME=450,DOUBLE_GAP=450,DOUBLE_DIST=40;
+  function isTextWidget(widget) {
+    if(typeof widget?.value!=='string' || widget.type==='combo')return false;
+    const options=typeof widget.options?.values==='function'?widget.options.values():widget.options?.values;
+    return !Array.isArray(options);
+  }
+  function describe(node,widget,index) {
+    return {nodeTitle:node.title||node.type,nodeType:node.type,name:widget.name||`字段 ${index+1}`,value:widget.value,target:bind(node,widget,index)};
+  }
   function textFieldFor(element) {
     const current=app()?.graph;
     if(!element || !current || !Array.isArray(current._nodes))return null;
     for(const node of current._nodes) for(let index=0;index<(node.widgets||[]).length;index++) {
-      const widget=node.widgets[index];
-      if(typeof widget.value!=='string' || widget.type==='combo')continue;
-      const options=typeof widget.options?.values==='function'?widget.options.values():widget.options?.values;
-      if(Array.isArray(options))continue;
+      const widget=node.widgets[index];if(!isTextWidget(widget))continue;
       const root=widget.element;
-      if(root && (root===element || root.contains?.(element)))
-        return {nodeTitle:node.title||node.type,nodeType:node.type,name:widget.name||`字段 ${index+1}`,value:widget.value,target:bind(node,widget,index)};
+      if(root && (root===element || root.contains?.(element)))return describe(node,widget,index);
     }
     return null;
   }
-  function requestNativeEditor(event) {
-    if(event.type==='focusin' && Date.now()-lastInteractionAt>1500)return;
-    const editable=event.target?.closest?.('textarea,input[type="text"],input:not([type]),[contenteditable="true"]');
-    const field=textFieldFor(editable);if(!field)return;
-    if(event.type!=='focusin') {event.preventDefault?.();event.stopImmediatePropagation?.();}
-    const now=Date.now();
-    if(field.target.token!==lastEditToken || now-lastEditAt>700) {
-      push('edit_field',field);lastEditToken=field.target.token;lastEditAt=now;
-    }
-    if(event.type==='focusin')editable.blur?.();
+  function editableOf(event) {return event.target?.closest?.('textarea,input[type="text"],input:not([type]),[contenteditable="true"]')||null;}
+  // Double tap on the body of a node (not its title) edits its text field; several fields ask the phone to choose.
+  function nodeHit(event) {
+    const canvas=app()?.canvas,current=app()?.graph;
+    if(!canvas?.canvas || event.target!==canvas.canvas || !canvas.ds || !current?.getNodeOnPos)return null;
+    const rect=canvas.canvas.getBoundingClientRect(),scale=canvas.ds.scale||1;
+    const x=(event.clientX-rect.left)/scale-canvas.ds.offset[0],y=(event.clientY-rect.top)/scale-canvas.ds.offset[1];
+    const node=current.getNodeOnPos(x,y,current._nodes);
+    if(!node || node.flags?.collapsed || y<node.pos[1])return null;
+    const widget=node.getWidgetOnPos?.(x,y,true);if(widget && !isTextWidget(widget))return null;
+    // Canvas-drawn single-line text widgets would open the web prompt on the first tap; they are claimed directly.
+    if(widget && !widget.element && !linked(node,widget)){const index=node.widgets.indexOf(widget),field=describe(node,widget,index);return {key:field.target.token,field,block:true};}
+    const fields=(node.widgets||[]).flatMap((w,index)=>isTextWidget(w)&&!linked(node,w)?[describe(node,w,index)]:[]);
+    return fields.length?{key:`node-${node.id}`,node,fields}:null;
   }
-  document.addEventListener('pointerdown',event=>{lastInteractionAt=Date.now();requestNativeEditor(event);},true);
-  document.addEventListener('keydown',event=>{if(!event.isComposing && (event.key==='Tab'||event.key==='Enter'))lastInteractionAt=Date.now();},true);
-  document.addEventListener('focusin',requestNativeEditor,true);
+  // A widget converted to a linked input is driven by its link, so editing its text would have no effect.
+  function linked(node,widget){return (node.inputs||[]).some(input=>input.link!=null && (input.widget?.name===widget.name || input.name===widget.name));}
+  function requestEdit(field) {
+    const now=Date.now();
+    if(field.target.token!==lastEditToken || now-lastEditAt>700) {push('edit_field',field);lastEditToken=field.target.token;lastEditAt=now;}
+  }
+  function openHit(hit) {
+    if(hit.field)requestEdit(hit.field);
+    else if(hit.fields.length===1)requestEdit(hit.fields[0]);
+    else push('pick_field',{nodeId:hit.node.id,nodeTitle:hit.node.title||hit.node.type,fields:hit.fields});
+  }
+  document.addEventListener('pointerdown',event=>{
+    lastPointerAt=Date.now();
+    if(tap && tap.id!==event.pointerId){
+      // A second finger cancels the tap; a pointerup that never arrived (released outside the page) must not swallow this one.
+      if(lastPointerAt-tap.at<TAP_TIME){tap=null;lastTap=null;return;}
+      tap=null;
+    }
+    const editable=editableOf(event),field=textFieldFor(editable);let hit=null;
+    if(field){editable.setAttribute?.('inputmode','none');hit={key:field.target.token,field};}
+    else{try{hit=nodeHit(event);}catch(ignored){hit=null;}}
+    if(hit?.block){event.preventDefault?.();event.stopImmediatePropagation?.();}
+    tap={id:event.pointerId,x:event.clientX,y:event.clientY,at:lastPointerAt,hit,moved:false};
+  },true);
+  document.addEventListener('pointermove',event=>{
+    if(tap && tap.id===event.pointerId && Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>TAP_MOVE)tap.moved=true;
+  },true);
+  document.addEventListener('pointercancel',()=>{tap=null;lastTap=null;},true);
+  document.addEventListener('pointerup',event=>{
+    const done=tap;if(!done || done.id!==event.pointerId)return;tap=null;
+    const now=Date.now();
+    if(done.moved || !done.hit || now-done.at>TAP_TIME){lastTap=null;return;}
+    if(lastTap && lastTap.key===done.hit.key && now-lastTap.at<DOUBLE_GAP && Math.hypot(done.x-lastTap.x,done.y-lastTap.y)<DOUBLE_DIST) {
+      lastTap=null;openHit(done.hit);
+    } else lastTap={key:done.hit.key,x:done.x,y:done.y,at:now};
+  },true);
+  document.addEventListener('keydown',event=>{if(!event.isComposing && (event.key==='Tab'||event.key==='Enter'))lastKeyAt=Date.now();},true);
+  // A tap must not raise the web keyboard; a keyboard Tab/Enter into a prompt field is an explicit edit request.
+  document.addEventListener('focusin',event=>{
+    const editable=editableOf(event),field=textFieldFor(editable);if(!field)return;
+    const now=Date.now();
+    if(now-lastKeyAt<1500 && lastKeyAt>lastPointerAt){editable.blur?.();requestEdit(field);}
+    else if(now-lastPointerAt<1500)editable.blur?.();
+  },true);
   function hook() {
     const api = window.comfyAPI?.api?.api;
     if (!api || api === hookedApi) return;
@@ -164,6 +214,13 @@
         node.disconnectInput(args.input);return {ok:true};
       }
       case 'widget':return write(args.target,args.value,false);
+      case 'chrome': {
+        // Focus mode is the frontend's own way to hide its menus; its hamburger button restores them.
+        const manager=instance.extensionManager;
+        if(!manager || typeof manager.focusMode!=='boolean') throw new Error('此前端版本不支持隐藏原版菜单');
+        if(typeof args.focus==='boolean') manager.focusMode=args.focus;
+        return {ok:true,focus:manager.focusMode};
+      }
       case 'fit': {
         const canvas=instance.canvas;if(canvas?.fitView) canvas.fitView();
         else if(canvas?.ds && current._nodes.length) {

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ComfyMobile">
+<meta name="theme-color" content="#10151A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>ComfyMobile</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<iframe id="editor" src="/" title="ComfyUI 编辑器"></iframe>
+
+<div id="chip" class="chip" hidden></div>
+<button id="handle" class="handle" type="button" aria-label="展开功能菜单">≡</button>
+
+<section id="sheet" class="sheet" hidden aria-label="工作流功能">
+  <div class="sheet-top"><span id="status" class="status">正在加载编辑器</span><button type="button" data-act="close-sheet">收起</button></div>
+  <div id="actions" class="actions"></div>
+</section>
+
+<section id="prompt" class="page" hidden aria-label="提示词编辑">
+  <header class="bar">
+    <button type="button" data-act="back">返回</button>
+    <button type="button" id="field-label" class="field-label" data-act="choose-field">选择节点文字字段</button>
+    <button type="button" class="primary" data-act="save">保存到节点</button>
+  </header>
+  <div class="prompt-body">
+    <div class="editor-col">
+      <textarea id="text" spellcheck="false" autocapitalize="sentences" placeholder="双击画布上的提示词节点，或点上方选择字段；也可以先在这里写草稿"></textarea>
+      <div class="tools">
+        <button type="button" data-act="library">词库</button>
+        <button type="button" data-act="templates">模板</button>
+        <button type="button" data-act="history">历史</button>
+        <button type="button" data-act="undo-text">撤销</button>
+        <button type="button" data-act="redo-text">重做</button>
+        <button type="button" data-act="weight-down">权重 −</button>
+        <button type="button" data-act="weight-up">权重 +</button>
+        <button type="button" data-act="favorite-text">收藏当前</button>
+      </div>
+    </div>
+    <aside id="library" class="library" aria-label="英文词库">
+      <div class="library-top">
+        <strong id="library-title">英文词库</strong>
+        <button type="button" class="narrow-only" data-act="close-library">关闭</button>
+      </div>
+      <input id="library-search" type="search" placeholder="中英文搜索，例如 光线 / lighting" autocomplete="off">
+      <select id="library-category"></select>
+      <div id="library-list" class="library-list"></div>
+      <div id="library-count" class="muted small"></div>
+    </aside>
+  </div>
+</section>
+
+<section id="results" class="page" hidden aria-label="任务与图库">
+  <header class="bar">
+    <button type="button" data-act="back">返回</button>
+    <div class="tabs">
+      <button type="button" data-tab="tasks">任务</button>
+      <button type="button" data-tab="gallery">图库</button>
+    </div>
+    <button type="button" class="primary" data-act="refresh">刷新</button>
+  </header>
+  <p id="results-summary" class="muted results-summary">从电脑读取任务记录</p>
+  <div id="results-list" class="grid"></div>
+</section>
+
+<div id="modal" class="modal" hidden></div>
+<div id="viewer" class="viewer" hidden>
+  <img id="viewer-image" alt="">
+  <div class="viewer-bar">
+    <span class="muted small">长按图片可“存储到照片”</span>
+    <a id="viewer-open" class="button" target="_blank" rel="noopener">新标签打开原图</a>
+    <button type="button" data-act="close-viewer">关闭</button>
+  </div>
+</div>
+<input id="import-file" type="file" accept=".json,application/json" hidden>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

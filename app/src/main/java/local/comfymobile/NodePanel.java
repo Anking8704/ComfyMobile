@@ -27,7 +27,7 @@ final class NodePanel {
         command("types",args(),result->{
             JSONArray types=result.optJSONArray("types");LinearLayout content=Ui.column(activity);Ui.pad(content,12);
             EditText filter=Ui.input(activity,"搜索节点类型",false);Ui.add(content,filter);LinearLayout list=Ui.column(activity);
-            content.addView(Ui.scroll(activity,list),new LinearLayout.LayoutParams(-1,Ui.dp(activity,350)));
+            content.addView(Ui.scroll(activity,list),new LinearLayout.LayoutParams(-1,Ui.listHeight(activity,440)));
             AlertDialog dialog=new AlertDialog.Builder(activity).setTitle("添加电脑已安装的节点").setView(content).setNegativeButton("取消",null).create();
             Runnable render=()->{
                 list.removeAllViews();String query=filter.getText().toString().toLowerCase(java.util.Locale.ROOT);int shown=0;

@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "viewport": [
+    915,
+    412
+  ],
+  "checks": [
+    "focus mode makes the canvas full screen",
+    "real touch single tap keeps web keyboard closed and does not navigate",
+    "real touch double tap opens exact node/widget",
+    "node body double tap opens the only prompt field",
+    "English field writeback",
+    "search inputs untouched",
+    "original menus restorable"
+  ],
+  "widgetType": "customtext"
+}

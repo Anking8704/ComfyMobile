@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "sizes": [
+    {
+      "name": "ipad-landscape",
+      "viewport": [
+        1180,
+        820
+      ],
+      "label": "CLIP文本编码 · #72 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": true,
+      "menuButtons": 13,
+      "results": "运行中 0 · 等待 0 · 生成记录 0"
+    },
+    {
+      "name": "ipad-portrait",
+      "viewport": [
+        820,
+        1180
+      ],
+      "label": "CLIP文本编码 · #73 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": false,
+      "menuButtons": 13,
+      "results": "运行中 0 · 等待 0 · 生成记录 0"
+    },
+    {
+      "name": "phone-portrait",
+      "viewport": [
+        375,
+        667
+      ],
+      "label": "CLIP文本编码 · #74 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": false,
+      "menuButtons": 13,
+      "results": "运行中 0 · 等待 0 · 生成记录 0"
+    }
+  ],
+  "checks": [
+    "adapter injected into the embedded editor",
+    "original menus hidden (full-screen canvas)",
+    "single tap does not navigate",
+    "real touch double tap opens the exact field",
+    "bilingual library inserts English only",
+    "save writes back to the node",
+    "floating menu fits the screen",
+    "gallery page has no horizontal overflow"
+  ]
+}

@@ -26,6 +26,8 @@ final class ResultsView {
     private int version=0;
     private int lastHistoryHash=0;
     private boolean viewingTask=false;
+    private LinearLayout row;
+    private int rowCount=0;
     private final android.util.LruCache<String,Bitmap> thumbs=new android.util.LruCache<String,Bitmap>(12*1024*1024){
         @Override protected int sizeOf(String key,Bitmap value){return value.getByteCount();}
     };
@@ -55,7 +57,7 @@ final class ResultsView {
         int hash=history.toString().hashCode();
         if(viewingTask || (hash==lastHistoryHash && list.getChildCount()>0))return;
         lastHistoryHash=hash;
-        list.removeAllViews();
+        clear();
         if(!gallery && running!=null)for(int i=0;i<running.length();i++)Ui.add(list,Ui.text(activity,"正在执行 · "+running.optJSONArray(i).optString(1),14,Ui.TEAL));
         ArrayList<String> keys=new ArrayList<>();Iterator<String> it=history.keys();while(it.hasNext())keys.add(it.next());Collections.reverse(keys);
         int count=0;
@@ -70,7 +72,7 @@ final class ResultsView {
                     JSONArray message=messages.optJSONArray(j);
                     if(message!=null&&"execution_error".equals(message.optString(0)))Ui.add(card,Ui.text(activity,message.optJSONObject(1).optString("exception_message","节点执行出错"),13,Ui.MUTED));
                 }
-                Ui.add(card,Ui.button(activity,"查看此任务图片",false,()->showTaskImages(item)));Ui.add(list,card);count++;continue;
+                Ui.add(card,Ui.button(activity,"查看此任务图片",false,()->showTaskImages(item)));place(card);count++;continue;
             }
             JSONObject outputs=item.optJSONObject("outputs");if(outputs==null)continue;
             Iterator<String> nodes=outputs.keys();
@@ -84,7 +86,7 @@ final class ResultsView {
     }
     private void showTaskImages(JSONObject item){
         JSONObject outputs=item.optJSONObject("outputs");if(outputs==null){activity.message("该任务没有图片输出");return;}
-        viewingTask=true;boolean found=false;list.removeAllViews();
+        viewingTask=true;boolean found=false;clear();
         Iterator<String> nodes=outputs.keys();while(nodes.hasNext()){
             JSONObject output=outputs.optJSONObject(nodes.next());if(output==null)continue;
             JSONArray images=output.optJSONArray("images");if(images==null)continue;
@@ -104,7 +106,7 @@ final class ResultsView {
         Ui.weighted(actions,Ui.button(activity,"查看原图",false,()->openImage(path,name)));
         Ui.weighted(actions,Ui.button(activity,"保存原图",true,()->save(path,name,false)));
         Ui.weighted(actions,Ui.button(activity,"分享",false,()->save(path,name,true)));
-        Ui.add(card,actions);Ui.add(list,card);
+        Ui.add(card,actions);place(card);
         Bitmap cached=thumbs.get(path);if(cached!=null){preview.setImageBitmap(cached);return;}
         activity.images.execute(()->{
             try{Bitmap bitmap=decode(client.bytes(path+"&preview=webp",10*1024*1024),1000);
@@ -112,6 +114,17 @@ final class ResultsView {
                 activity.runOnUiThread(()->{if(!activity.isFinishing())preview.setImageBitmap(bitmap);});
             }catch(Exception e){activity.runOnUiThread(()->preview.setContentDescription("缩略图加载失败，可重试或保存原图："+name));}
         });
+    }
+    private int columns(){return Math.max(1,Math.min(4,activity.getResources().getConfiguration().screenWidthDp/320));}
+    private int builtColumns=1;
+    /** A rotation only rebuilds the page when the column count changes and no single task is open. */
+    boolean needsRelayout(){return !viewingTask&&columns()!=builtColumns;}
+    private void clear(){list.removeAllViews();row=null;rowCount=0;builtColumns=columns();}
+    /** Lays cards out in as many columns as the screen width allows: one on phones in portrait, more on landscape and tablets. */
+    private void place(View card){
+        int columns=columns();if(columns==1){Ui.add(list,card);return;}
+        if(row==null||rowCount>=columns){row=Ui.row(activity);row.setGravity(android.view.Gravity.TOP);row.setWeightSum(columns);Ui.add(list,row);rowCount=0;}
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);int g=Ui.dp(activity,4);p.setMargins(g,0,g,0);row.addView(card,p);rowCount++;
     }
     private static Bitmap decode(byte[] data,int max){
         BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(data,0,data.length,options);

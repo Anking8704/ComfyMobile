@@ -1,0 +1,101 @@
+// Checks the iPad web shell against the installed frontend through a read-only proxy.
+// /comfymobile/* is served from this repository; everything else is proxied to the local ComfyUI with non-GET requests dropped.
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),{spawn,spawnSync}=require('node:child_process');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'build','web-smoke');fs.mkdirSync(out,{recursive:true});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));let edge,ws,send,evaluate;
+const local={'editor-adapter.js':'app/src/main/assets/editor-adapter.js','prompt-library.json':'app/src/main/assets/prompt-library.json'};
+const types={'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.webmanifest':'application/manifest+json'};
+const server=http.createServer(async(req,res)=>{
+ try{
+  const url=new URL(req.url,'http://x');
+  if(url.pathname.startsWith('/comfymobile/')){
+   const name=url.pathname.slice('/comfymobile/'.length)||'index.html';
+   const file=local[name]?path.join(root,local[name]):path.join(root,'web/comfymobile_web/static',path.basename(name));
+   res.writeHead(200,{'content-type':types[path.extname(file)]||'application/octet-stream'});res.end(fs.readFileSync(file));return;
+  }
+  const route=req.url.replace(/^\/api\//,'/');
+  if(req.method!=='GET') {res.writeHead(200,{'content-type':'application/json'});res.end('{}');return;}
+  if(route.startsWith('/userdata')){res.writeHead(200,{'content-type':'application/json'});res.end(route.includes('?')?'[]':'{}');return;}
+  if(route==='/extensions'){res.writeHead(200,{'content-type':'application/json'});res.end('[]');return;}
+  const response=await fetch('http://127.0.0.1:8188'+req.url);
+  let data;
+  if(route==='/object_info') {const all=await response.json();data=Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(all).filter(([name])=>['CLIPTextEncode','KSampler','EmptyLatentImage','SaveImage'].includes(name)))));}
+  else data=Buffer.from(await response.arrayBuffer());
+  res.writeHead(response.status,{'content-type':response.headers.get('content-type')||'application/octet-stream','cache-control':'no-store'});res.end(data);
+ }catch(error){res.writeHead(502);res.end(String(error));}
+});
+function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});}
+(async()=>{
+ const report={ok:false,sizes:[]};
+ try{
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;
+  edge=spawn('C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=9241','--user-data-dir='+path.join(out,'profile'),'about:blank'],{windowsHide:true,stdio:'ignore'});
+  let target;
+  for(let i=0;i<100;i++){try{const all=await(await fetch('http://127.0.0.1:9241/json')).json();target=all.find(t=>t.type==='page');if(target)break;}catch{}await sleep(300);}
+  if(!target)throw Error('No browser target');ws=new WebSocket(target.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
+  let id=0;const pending=new Map();ws.onmessage=e=>{const r=JSON.parse(e.data);if(r.method==='Page.javascriptDialogOpening'){send('Page.handleJavaScriptDialog',{accept:true}).catch(()=>{});return;}if(pending.has(r.id)){pending.get(r.id)(r);pending.delete(r.id);}};
+  send=(method,params={})=>new Promise((resolve,reject)=>{const key=++id;pending.set(key,r=>r.error?reject(Error(JSON.stringify(r.error))):resolve(r.result));ws.send(JSON.stringify({id:key,method,params}));setTimeout(()=>{if(pending.delete(key))reject(Error('CDP timeout'));},30000).unref();});
+  evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result?.value;};
+  const shot=async name=>{const r=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,name),Buffer.from(r.data,'base64'));};
+  const touch=async(x,y)=>{await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await sleep(40);await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
+  await send('Page.enable');await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+  // iPad Air landscape first (full checks), then iPad portrait and a small phone for layout.
+  const sizes=[['ipad-landscape',1180,820],['ipad-portrait',820,1180],['phone-portrait',375,667]];
+  for(const [name,width,height] of sizes){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true});
+   await send('Page.navigate',{url:`http://127.0.0.1:${port}/comfymobile/`});await sleep(1500);
+   let ready=false;for(let i=0;i<120;i++){ready=await evaluate(`(()=>{try{const w=document.querySelector('#editor').contentWindow;return !!(w.ComfyMobileEditor&&w.comfyAPI.app.app.extensionManager.focusMode);}catch{return false;}})()`);if(ready)break;await sleep(400);}
+   if(!ready)throw Error(name+': adapter not injected or focus mode not applied');
+   const setup=await evaluate(`(async()=>{
+     const w=document.querySelector('#editor').contentWindow,app=w.comfyAPI.app.app,b=w.ComfyMobileEditor;
+     await app.loadGraphData({last_node_id:0,last_link_id:0,nodes:[],links:[],groups:[],config:{},extra:{},version:.4},true,true,null,{skipAssetScans:true,deferWarnings:true});
+     await new Promise(r=>setTimeout(r,400));
+     const added=await b.command('add',{type:'CLIPTextEncode'});if(!added.ok)throw Error(added.error);
+     const node=app.graph.getNodeById(added.nodeId);node.pos=[60,80];node.size=[Math.min(420,innerWidth-140),240];app.canvas.ds.scale=1;app.canvas.ds.offset=[0,0];app.canvas.setDirty(true,true);app.canvas.draw(true,true);
+     await new Promise(r=>setTimeout(r,700));
+     const widget=node.widgets.find(x=>x.name==='text');widget.value='original prompt';const el=widget.element;
+     const input=el?.matches?.('textarea,input')?el:el?.querySelector?.('textarea,input');input.value='original prompt';
+     const r=input.getBoundingClientRect(),h=document.querySelector('#handle').getBoundingClientRect(),c=w.document.querySelector('#graph-canvas').getBoundingClientRect();
+     return {input:[r.left+r.width/2,r.top+Math.min(30,r.height/2)],handle:[h.left+h.width/2,h.top+h.height/2],canvas:[c.width,c.height],viewport:[innerWidth,innerHeight],node:added.nodeId};
+   })()`);
+   if(Math.round(setup.canvas[0])!==width||Math.round(setup.canvas[1])!==height)throw Error(name+': canvas is not full screen '+JSON.stringify(setup));
+   await shot(name+"-canvas.png");
+   await touch(...setup.input);await sleep(900);
+   if(!(await evaluate(`document.querySelector('#prompt').hidden`)))throw Error(name+': single tap opened the prompt page');
+   await touch(...setup.input);await sleep(120);await touch(setup.input[0]+2,setup.input[1]+1);
+   let opened=false;for(let i=0;i<20&&!opened;i++){await sleep(150);opened=await evaluate(`!document.querySelector('#prompt').hidden && document.querySelector('#text').value==='original prompt'`);}
+   if(!opened)throw Error(name+': double tap did not open the bound prompt page');
+   await sleep(300);await shot(name+'-prompt.png');
+   const editing=await evaluate(`(async()=>{
+     const label=document.querySelector('#field-label').textContent;
+     const items=document.querySelectorAll('#library-list .entry').length;
+     const t=document.querySelector('#text');t.value='silver hair';t.setSelectionRange(t.value.length,t.value.length);t.dispatchEvent(new Event('input'));
+     document.querySelector('#library-search').value='lighting';document.querySelector('#library-search').dispatchEvent(new Event('input'));
+     const first=document.querySelector('#library-list .entry');const english=first.querySelector('.en').textContent;first.click();
+     await new Promise(r=>setTimeout(r,100));
+     if(!t.value.startsWith('silver hair, '+english))throw Error('library insert wrong: '+t.value);
+     document.querySelector('[data-act="save"]').click();await new Promise(r=>setTimeout(r,300));
+     const w=document.querySelector('#editor').contentWindow,node=w.comfyAPI.app.app.graph.getNodeById(${setup.node});
+     const value=node.widgets.find(x=>x.name==='text').value;if(value!==t.value)throw Error('writeback failed: '+value);
+     const sidebar=getComputedStyle(document.querySelector('#library')).display!=='none';
+     return {label,items,english,sidebar};
+   })()`);
+   if(name==='ipad-landscape'&&!editing.sidebar)throw Error('iPad landscape should keep the library beside the editor');
+   await evaluate(`document.querySelector('[data-act="back"]').click()`);await sleep(300);
+   await touch(...setup.handle);await sleep(300);
+   const sheet=await evaluate(`(()=>{const s=document.querySelector('#sheet');const r=s.getBoundingClientRect();return {open:!s.hidden,inside:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,buttons:document.querySelectorAll('#actions button').length};})()`);
+   if(!sheet.open||!sheet.inside||sheet.buttons<12)throw Error(name+': menu sheet '+JSON.stringify(sheet));
+   await shot(name+'-menu.png');
+   await evaluate(`[...document.querySelectorAll('#actions button')].find(b=>b.textContent==='图库').click()`);await sleep(1500);
+   const results=await evaluate(`(()=>{const p=document.querySelector('#results');return {open:!p.hidden,summary:document.querySelector('#results-summary').textContent,overflow:document.documentElement.scrollWidth>innerWidth}})()`);
+   if(!results.open||results.overflow)throw Error(name+': results page '+JSON.stringify(results));
+   await shot(name+'-gallery.png');
+   report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary});
+  }
+  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow'];
+  fs.writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+ }catch(error){
+  if(evaluate){try{await send('Page.captureScreenshot',{format:'png'}).then(r=>fs.writeFileSync(path.join(out,'failure.png'),Buffer.from(r.data,'base64')));}catch{}}
+  throw error;
+ }finally{if(ws)ws.close();stop(edge);server.closeAllConnections();server.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

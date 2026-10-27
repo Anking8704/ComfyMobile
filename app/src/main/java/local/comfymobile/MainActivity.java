@@ -15,6 +15,8 @@ import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -34,9 +36,11 @@ public final class MainActivity extends Activity {
     final ExecutorService worker=Executors.newFixedThreadPool(2);
     final ExecutorService images=Executors.newFixedThreadPool(2);
     private final Handler handler=new Handler(Looper.getMainLooper());
-    private LinearLayout root,nav,header,workflowPage,workflowTools;
+    private LinearLayout root,nav,header;
+    private FrameLayout workflowPage;
+    private FloatingMenu menu;
     private FrameLayout body;
-    private TextView connection,progress;
+    private TextView connection;
     private EditorView editor;
     private PromptEditor prompt;
     private ResultsView results;
@@ -46,8 +50,10 @@ public final class MainActivity extends Activity {
     private int page=0;
     private boolean active=false;
     private final SubmissionState submission=new SubmissionState();
-    private Button generateButton;
-    private Button orientationButton,workflowRotate;
+    private static final String GENERATE="开始生成";
+    private Button orientationButton;
+    private int focusLoads=-1;
+    private boolean focusPending=false;
     private int eventEpoch=0;
     private String exportJson;
 
@@ -55,14 +61,16 @@ public final class MainActivity extends Activity {
         super.onCreate(state);prefs=getSharedPreferences("settings",0);
         applyOrientation(prefs.getString("orientation","system"));
         getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        WindowManager.LayoutParams attributes=getWindow().getAttributes();attributes.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;getWindow().setAttributes(attributes);
         if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);
+        else getWindow().getDecorView().setSystemUiVisibility(EDGE_TO_EDGE);
         root=Ui.column(this);root.setBackgroundColor(Ui.BG);
         Ui.applyInsets(root);
         header=Ui.row(this);Ui.pad(header,10);
         TextView name=Ui.text(this,"ComfyMobile",18,Ui.TEXT);header.addView(name,new LinearLayout.LayoutParams(0,-2,1));
         orientationButton=Ui.button(this,"横屏",false,this::toggleOrientation);header.addView(orientationButton);
         header.addView(Ui.button(this,"连接设置",false,this::showConnection));root.addView(header);
-        connection=Ui.text(this,"电脑算力 · 手机创作",12,Ui.MUTED);connection.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),Ui.dp(this,5));root.addView(connection);
+        connection=Ui.text(this,"电脑算力 · 手机创作",12,Ui.MUTED);connection.setSingleLine(true);connection.setEllipsize(android.text.TextUtils.TruncateAt.END);connection.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),Ui.dp(this,5));root.addView(connection);
         body=new FrameLayout(this);root.addView(body,new LinearLayout.LayoutParams(-1,0,1));
         nav=Ui.row(this);Ui.pad(nav,5);String[] tabs={"工作流","提示词","任务","图库"};
         for(int i=0;i<tabs.length;i++){final int target=i;Ui.weighted(nav,Ui.button(this,tabs[i],false,()->showPage(target)));}root.addView(nav);
@@ -93,16 +101,16 @@ public final class MainActivity extends Activity {
                 }catch(Exception e){runOnUiThread(()->{connect[0].setEnabled(true);state.setText("连接失败："+e.getMessage()+"\n检查 ComfyUI 是否开启局域网监听、地址和端口是否正确。");});}
             });
         });Ui.add(content,connect[0]);
-        Ui.add(content,Ui.text(this,"电脑启动参数\n--listen 0.0.0.0 --port 8188\n\n首次连接可先用手机浏览器打开相同地址。电脑需要保持开机，地址变化后在这里更新。",14,Ui.MUTED));
+        Ui.add(content,Ui.text(this,"电脑启动参数\n--listen 0.0.0.0 --port 8188\n\n首次连接可先用手机浏览器打开相同地址。电脑需要保持开机，地址变化后在这里更新。\n\niPad / 其他平板：电脑安装网页版后，用 Safari 打开 相同地址/comfymobile/ ，再“添加到主屏幕”即可全屏使用。",14,Ui.MUTED));
         if(editor!=null)Ui.add(content,Ui.button(this,"返回当前工作流",false,()->showPage(0)));
-        Ui.add(content,Ui.text(this,"本地开发版 0.2.0 · Android 10+",12,Ui.MUTED));body.addView(Ui.scroll(this,content));updateLayout();
+        Ui.add(content,Ui.text(this,"本地开发版 0.3.0 · Android 10+",12,Ui.MUTED));body.addView(Ui.scroll(this,Ui.maxWidth(content,560)));updateLayout();
     }
     private void attach(ServerAddress address){
         if(server!=null&&server.origin().equals(address.origin())&&editor!=null)return;
         submission.reset();previewData=null;
         if(editor!=null)editor.destroy();server=address;client=new ComfyClient(server);prefs.edit().putString("server",server.origin()).apply();
-        editor=new EditorView(this,server,text->{connection.setText(server.origin()+" · "+text);});prompt.resetTarget();
-        connection.setText(server.origin()+" · 正在加载编辑器");
+        editor=new EditorView(this,server,this::status);prompt.resetTarget();focusLoads=-1;focusPending=false;
+        status("正在加载编辑器");
         eventEpoch++;handler.removeCallbacks(eventTick);if(active)handler.post(eventTick);
     }
     void showPage(int index){
@@ -111,19 +119,14 @@ public final class MainActivity extends Activity {
         nav.setVisibility(index==1?View.GONE:View.VISIBLE);
         header.setVisibility(index==1?View.GONE:View.VISIBLE);connection.setVisibility(index==1?View.GONE:View.VISIBLE);
         for(int i=0;i<nav.getChildCount();i++)((Button)nav.getChildAt(i)).setTextColor(i==index?Ui.TEAL:Ui.MUTED);
+        menu=null;workflowPage=null;
         if(index==0){
-            workflowPage=Ui.column(this);
+            workflowPage=new FrameLayout(this);
             if(editor.getParent()!=null)((ViewGroup)editor.getParent()).removeView(editor);
-            workflowPage.addView(editor,new LinearLayout.LayoutParams(-1,0,1));
-            progress=Ui.text(this,"点击节点文字框可全屏编辑 · 双指缩放画布",12,Ui.MUTED);Ui.add(workflowPage,progress);
-            LinearLayout tools=Ui.row(this);workflowTools=tools;Ui.pad(tools,4);NodePanel nodes=new NodePanel(this);
-            Ui.weighted(tools,Ui.button(this,"节点",false,nodes::list));Ui.weighted(tools,Ui.button(this,"添加",false,nodes::add));
-            Ui.weighted(tools,Ui.button(this,"适应",false,()->editor.command("fit",new JSONObject(),this::report)));
-            Ui.weighted(tools,Ui.button(this,"提示词",false,()->showPage(1)));
-            Ui.weighted(tools,Ui.button(this,"更多",false,this::more));
-            workflowRotate=Ui.button(this,"竖屏",false,this::toggleOrientation);Ui.weighted(tools,workflowRotate);
-            Ui.add(workflowPage,tools);
-            generateButton=Ui.button(this,"开始生成",true,this::generate);generateButton.setEnabled(!submission.pending());Ui.add(workflowPage,generateButton);body.addView(workflowPage);
+            workflowPage.addView(editor,new FrameLayout.LayoutParams(-1,-1));
+            menu=new FloatingMenu(this,workflowPage,prefs);menu.setItems(menuItems());menu.setEnabled(GENERATE,!submission.pending());
+            menu.setStatus(connection.getText().toString());body.addView(workflowPage);menu.attached();
+            if(!prefs.getBoolean("hint_v3",false)){prefs.edit().putBoolean("hint_v3",true).apply();message("双击提示词节点进入编辑；圆形按钮展开功能，可拖到任意边");}
         }else if(index==1){
             if(prompt.view().getParent()!=null)((ViewGroup)prompt.view().getParent()).removeView(prompt.view());body.addView(prompt.view());
             // Android's back gesture returns to the workflow after dismissing the IME.
@@ -135,27 +138,71 @@ public final class MainActivity extends Activity {
     private void applyOrientation(String mode){
         setRequestedOrientation(mode.equals("landscape")?ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE:mode.equals("portrait")?ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT:ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
     }
-    @Override public void onConfigurationChanged(Configuration config){super.onConfigurationChanged(config);updateLayout();if(prompt!=null)prompt.orientationChanged();}
+    @Override public void onConfigurationChanged(Configuration config){super.onConfigurationChanged(config);if((page==2||page==3)&&results!=null&&results.needsRelayout())showPage(page);else updateLayout();if(prompt!=null)prompt.orientationChanged();}
     private void updateLayout(){
         if(header==null||connection==null||nav==null)return;
-        boolean wide=isLandscape(),canvas=page==0&&editor!=null;
-        if(orientationButton!=null)orientationButton.setText(wide?"竖屏":"横屏");
-        header.setVisibility(page==1||(canvas&&wide)?View.GONE:View.VISIBLE);
-        connection.setVisibility(page==1||(canvas&&wide)?View.GONE:View.VISIBLE);
-        nav.setVisibility(page<0||page==1||(canvas&&wide)?View.GONE:View.VISIBLE);
-        if(canvas&&workflowTools!=null&&generateButton!=null){
-            progress.setVisibility(wide?View.GONE:View.VISIBLE);workflowRotate.setVisibility(wide?View.VISIBLE:View.GONE);
-            ViewGroup desired=wide?workflowTools:workflowPage;
-            if(generateButton.getParent()!=desired){((ViewGroup)generateButton.getParent()).removeView(generateButton);if(wide)Ui.weighted(workflowTools,generateButton);else Ui.add(workflowPage,generateButton);}
-        }
+        boolean canvas=page==0&&editor!=null,bare=page==1||canvas;
+        if(orientationButton!=null)orientationButton.setText(isLandscape()?"竖屏":"横屏");
+        header.setVisibility(bare?View.GONE:View.VISIBLE);connection.setVisibility(bare?View.GONE:View.VISIBLE);
+        nav.setVisibility(page<0||bare?View.GONE:View.VISIBLE);
+        fullScreen(canvas);
+        if(menu!=null)menu.setItems(menuItems());
+    }
+    /** The canvas page hides the system bars; an edge swipe shows them temporarily. Other pages keep normal bars for the IME. */
+    private void fullScreen(boolean on){
+        if(Build.VERSION.SDK_INT>=30){
+            WindowInsetsController controller=getWindow().getInsetsController();if(controller==null)return;
+            if(on){controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);controller.hide(WindowInsets.Type.systemBars());}
+            else controller.show(WindowInsets.Type.systemBars());
+        }else getWindow().getDecorView().setSystemUiVisibility(on?EDGE_TO_EDGE|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_FULLSCREEN:EDGE_TO_EDGE);
+    }
+    // No LAYOUT_STABLE: Android 10 must report zero insets once the bars are hidden, or the canvas keeps empty bands.
+    private static final int EDGE_TO_EDGE=View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+    @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused&&page==0&&editor!=null)fullScreen(true);}
+    private FloatingMenu.Item[] menuItems(){
+        NodePanel nodes=new NodePanel(this);
+        return new FloatingMenu.Item[]{
+            new FloatingMenu.Item(GENERATE,true,false,this::generate),
+            new FloatingMenu.Item("提示词",false,false,()->showPage(1)),
+            new FloatingMenu.Item("节点",false,false,nodes::list),
+            new FloatingMenu.Item("添加",false,false,nodes::add),
+            new FloatingMenu.Item("适应画布",false,false,()->editor.command("fit",new JSONObject(),this::report)),
+            new FloatingMenu.Item("任务",false,false,()->showPage(2)),
+            new FloatingMenu.Item("图库",false,false,()->showPage(3)),
+            new FloatingMenu.Item(isLandscape()?"竖屏":"横屏",false,false,this::toggleOrientation),
+            new FloatingMenu.Item("原版菜单",false,false,this::toggleWebMenus),
+            new FloatingMenu.Item("连接设置",false,false,this::showConnection),
+            new FloatingMenu.Item("更多",false,false,this::more)};
+    }
+    void status(String text){
+        String line=server==null?text:server.origin()+" · "+text;connection.setText(line);if(menu!=null)menu.setStatus(line);
+    }
+    private void toggleWebMenus(){
+        editor.command("chrome",new JSONObject(),state->{
+            if(!state.optBoolean("ok")){report(state);return;}
+            boolean hide=!state.optBoolean("focus");
+            editor.command("chrome",NodePanel.args("focus",hide),r->{
+                if(!r.optBoolean("ok")){report(r);return;}
+                prefs.edit().putBoolean("web_menus",!r.optBoolean("focus")).apply();
+                message(r.optBoolean("focus")?"已隐藏原版菜单，画布全屏":"已显示原版菜单；可在这里再次隐藏");
+            });
+        });
+    }
+    /** Applies the saved original-menu preference once per editor page load. */
+    private void applyWebMenus(){
+        if(editor==null||focusPending||focusLoads==editor.loads)return;
+        final EditorView source=editor;final int load=source.loads;focusPending=true;
+        source.command("chrome",NodePanel.args("focus",!prefs.getBoolean("web_menus",false)),r->{
+            if(source!=editor)return;focusPending=false;if(r.optBoolean("ok"))focusLoads=load;
+        });
     }
     private void report(JSONObject r){if(!r.optBoolean("ok"))message(r.optString("error"));}
     private void generate(){
         final int epoch=submission.begin();if(epoch<0)return;
-        if(generateButton!=null)generateButton.setEnabled(false);connection.setText(server.origin()+" · 正在提交");
-        editor.command("generate",new JSONObject(),r->{if(!submission.finish(epoch))return;if(generateButton!=null)generateButton.setEnabled(true);
-            if(r.optBoolean("ok")){message("提交操作已完成，请查看任务；节点校验错误请看编辑器提示");connection.setText(server.origin()+" · 已发送生成请求");}
-            else{report(r);connection.setText(server.origin()+" · 提交未确认，请检查任务");}
+        if(menu!=null)menu.setEnabled(GENERATE,false);status("正在提交");
+        editor.command("generate",new JSONObject(),r->{if(!submission.finish(epoch))return;if(menu!=null)menu.setEnabled(GENERATE,true);
+            if(r.optBoolean("ok")){message("提交操作已完成，请查看任务；节点校验错误请看编辑器提示");status("已发送生成请求");}
+            else{report(r);status("提交未确认，请检查任务");}
         });
     }
     private void more(){
@@ -189,33 +236,45 @@ public final class MainActivity extends Activity {
     private final Runnable eventTick=new Runnable(){public void run(){
         if(!active)return;
         if(editor==null||page<0||page==1){handler.postDelayed(this,200);return;}
+        if(page==0)applyWebMenus();
         final int epoch=eventEpoch;final EditorView source=editor;
         source.call("drainEvents",new JSONArray(),r->{
             if(epoch!=eventEpoch||!active)return;
             JSONArray events=r.optJSONArray("events");if(events==null){handler.postDelayed(eventTick,500);return;}
-            boolean completed=false;JSONObject editRequest=null;
+            boolean completed=false;JSONObject editRequest=null,pickRequest=null;
             for(int i=0;i<events.length();i++){
                 JSONObject event=events.optJSONObject(i);if(event==null)continue;JSONObject data=event.optJSONObject("data");
                 String type=event.optString("type");
-                if(type.equals("progress")&&data!=null){String label="采样进度 "+data.optInt("value")+" / "+data.optInt("max");connection.setText(server.origin()+" · "+label);if(progress!=null)progress.setText(label);}
+                if(type.equals("progress")&&data!=null){String label="采样进度 "+data.optInt("value")+" / "+data.optInt("max");status(label);if(menu!=null)menu.showProgress(label);}
                 if(type.equals("preview")&&data!=null)previewData=data.optString("dataUrl",previewData);
                 if(type.equals("execution_success")||type.equals("executed"))completed=true;
-                if(type.equals("execution_error"))connection.setText(server.origin()+" · 节点执行失败，请查看任务");
-                if(type.equals("edit_field")&&data!=null)editRequest=data;
+                if(type.equals("execution_success")&&menu!=null)menu.showProgress("生成完成 · 可在图库查看");
+                if(type.equals("execution_error")){status("节点执行失败，请查看任务");if(menu!=null)menu.showProgress("节点执行失败，请查看任务");}
+                if(type.equals("edit_field")&&data!=null){editRequest=data;pickRequest=null;}
+                if(type.equals("pick_field")&&data!=null){pickRequest=data;editRequest=null;}
             }
             if(completed&&results!=null)results.refresh();
-            if(editRequest!=null&&page==0&&source==editor){
-                JSONObject field=editRequest;
-                source.call("readField",new JSONArray().put(field.optJSONObject("target")),value->{
-                    if(!active||page!=0||editor!=source)return;
-                    if(!value.optBoolean("ok")){report(value);return;}
-                    try{field.put("value",value.optString("value"));}catch(Exception ignored){}
-                    showPage(1);prompt.openField(field);
-                });
+            if(editRequest!=null&&page==0&&source==editor)openEdit(source,editRequest);
+            if(pickRequest!=null&&page==0&&source==editor){
+                JSONArray fields=pickRequest.optJSONArray("fields");
+                if(fields!=null&&fields.length()>0){
+                    String[] names=new String[fields.length()];for(int i=0;i<names.length;i++){JSONObject f=fields.optJSONObject(i);String v=f.optString("value").replace('\n',' ');names[i]=f.optString("name")+(v.isEmpty()?"":"："+(v.length()>40?v.substring(0,40)+"…":v));}
+                    new AlertDialog.Builder(MainActivity.this).setTitle(pickRequest.optString("nodeTitle")+" · 选择要编辑的字段")
+                        .setItems(names,(d,i)->openEdit(source,fields.optJSONObject(i))).setNegativeButton("取消",null).show();
+                }
             }
             handler.postDelayed(eventTick,page==0?160:1000);
         });
     }};
+    /** Re-reads the field so the prompt page starts from the node's current text, then opens it. */
+    private void openEdit(EditorView source,JSONObject field){
+        source.call("readField",new JSONArray().put(field.optJSONObject("target")),value->{
+            if(!active||page!=0||editor!=source)return;
+            if(!value.optBoolean("ok")){report(value);return;}
+            try{field.put("value",value.optString("value"));}catch(Exception ignored){}
+            showPage(1);prompt.openField(field);
+        });
+    }
     private final Runnable tick=new Runnable(){public void run(){
         if(!active)return;
         if(results!=null)results.refresh();handler.postDelayed(this,4000);
@@ -225,6 +284,7 @@ public final class MainActivity extends Activity {
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putInt("page",Math.max(0,page));prompt.persist();}
     @Override protected void onDestroy(){active=false;handler.removeCallbacksAndMessages(null);if(editor!=null)editor.destroy();worker.shutdownNow();images.shutdownNow();super.onDestroy();}
     @Override public void onBackPressed(){
+        if(page==0&&menu!=null&&menu.isOpen()){menu.close();return;}
         if(page!=0&&editor!=null){showPage(0);return;}
         if(editor!=null&&editor.web.canGoBack()){editor.web.goBack();return;}
         super.onBackPressed();

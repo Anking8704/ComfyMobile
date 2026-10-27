@@ -31,6 +31,8 @@ final class EditorView extends FrameLayout {
     private String script;
     private int requestId=0;
     private boolean destroyed=false;
+    /** Counts finished page loads so per-load setup (such as hiding the original menus) can be re-applied. */
+    int loads=0;
     ValueCallback<Uri[]> fileCallback;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -57,7 +59,7 @@ final class EditorView extends FrameLayout {
             }
             @Override public void onPageFinished(WebView view,String url) {
                 if(!server.owns(url))return;
-                web.evaluateJavascript(script,null);status.accept("编辑器已加载");
+                web.evaluateJavascript(script,null);loads++;status.accept("编辑器已加载");
             }
             @Override public void onReceivedError(WebView view,WebResourceRequest req,WebResourceError error) {
                 if(req.isForMainFrame())status.accept("连接失败，请检查电脑是否启动、Wi-Fi 和防火墙");

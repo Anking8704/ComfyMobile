@@ -25,7 +25,7 @@ if ($TestOnly) { exit 0 }
 if (!(Test-Path -LiteralPath $android)) { throw 'Android SDK 不完整，请运行 scripts/setup-tools.ps1' }
 & "$tools\aapt2.exe" compile --dir app/src/main/res -o build/resources.zip
 Check-Exit '资源编译'
-& "$tools\aapt2.exe" link -o build/resources.apk -I $android --manifest app/src/main/AndroidManifest.xml --java build/generated --min-sdk-version 29 --target-sdk-version 35 --version-code 2 --version-name '0.2.0' -A app/src/main/assets build/resources.zip
+& "$tools\aapt2.exe" link -o build/resources.apk -I $android --manifest app/src/main/AndroidManifest.xml --java build/generated --min-sdk-version 29 --target-sdk-version 35 --version-code 3 --version-name '0.3.0' -A app/src/main/assets build/resources.zip
 Check-Exit '资源链接'
 $sources = Get-ChildItem app/src/main/java,build/generated -Recurse -Filter '*.java' | ForEach-Object { '"' + $_.FullName.Replace('\','/') + '"' }
 [System.IO.File]::WriteAllLines((Join-Path $root 'build/sources.txt'),[string[]]$sources,(New-Object System.Text.UTF8Encoding($false)))
@@ -45,8 +45,8 @@ if (!(Test-Path -LiteralPath $keystore)) {
     & "$jdk\bin\keytool.exe" -genkeypair -keystore $keystore -storepass android -keypass android -alias comfymobile -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=ComfyMobile Local Development'
     Check-Exit '创建本地开发签名'
 }
-& $java -jar "$tools\lib\apksigner.jar" sign --ks $keystore --ks-key-alias comfymobile --ks-pass pass:android --key-pass pass:android --out output/ComfyMobile-0.2.0.apk build/aligned.apk
+& $java -jar "$tools\lib\apksigner.jar" sign --ks $keystore --ks-key-alias comfymobile --ks-pass pass:android --key-pass pass:android --out output/ComfyMobile-0.3.0.apk build/aligned.apk
 Check-Exit 'APK 签名'
-& $java -jar "$tools\lib\apksigner.jar" verify --verbose output/ComfyMobile-0.2.0.apk
+& $java -jar "$tools\lib\apksigner.jar" verify --verbose output/ComfyMobile-0.3.0.apk
 Check-Exit '签名验证'
-Get-FileHash -Algorithm SHA256 -LiteralPath output/ComfyMobile-0.2.0.apk | Format-List
+Get-FileHash -Algorithm SHA256 -LiteralPath output/ComfyMobile-0.3.0.apk | Format-List

@@ -96,7 +96,7 @@ final class PromptEditor {
             LinearLayout content=Ui.column(activity);Ui.pad(content,14);
             EditText search=Ui.input(activity,"搜索节点或字段",false);Ui.add(content,search);
             LinearLayout list=Ui.column(activity);
-            ScrollView scroll=Ui.scroll(activity,list);content.addView(scroll,new LinearLayout.LayoutParams(-1,Ui.dp(activity,330)));
+            ScrollView scroll=Ui.scroll(activity,list);content.addView(scroll,new LinearLayout.LayoutParams(-1,Ui.listHeight(activity,420)));
             AlertDialog dialog=new AlertDialog.Builder(activity).setTitle("选择实际文字字段").setView(content).setNegativeButton("取消",null).create();
             Runnable render=()->{
                 list.removeAllViews();String filter=search.getText().toString().toLowerCase(java.util.Locale.ROOT);

@@ -32,6 +32,8 @@ final class Ui {
         Button b=new Button(c);b.setText(s);b.setTextSize(15);b.setAllCaps(false);b.setTextColor(primary?BG:TEXT);
         b.setMinHeight(dp(c,48));b.setMinimumHeight(dp(c,48));b.setPadding(dp(c,12),dp(c,4),dp(c,12),dp(c,4));
         b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF),shape(c,primary?TEAL:SURFACE),null));
+        // Long labels shrink instead of wrapping on narrow phones or with large system font sizes.
+        b.setMaxLines(1);b.setAutoSizeTextTypeUniformWithConfiguration(10,15,1,android.util.TypedValue.COMPLEX_UNIT_SP);
         b.setOnClickListener(v->action.run());return b;
     }
     static EditText input(Context c,String hint,boolean multiline) {
@@ -43,6 +45,21 @@ final class Ui {
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.bottomMargin=dp(parent.getContext(),10);parent.addView(view,p);
     }
     static void weighted(LinearLayout parent,View child) {parent.addView(child,new LinearLayout.LayoutParams(0,dp(parent.getContext(),48),1));}
+    /** Height for a scrolling list inside a dialog: tall on tablets, never taller than about half of a landscape phone. */
+    static int listHeight(Context c,int maxDp){return Math.min(dp(c,maxDp),Math.round(c.getResources().getDisplayMetrics().heightPixels*0.5f));}
+    static boolean wide(Context c){return c.getResources().getConfiguration().smallestScreenWidthDp>=600;}
+    /** Keeps forms readable on tablets by centring content at a maximum width. */
+    static View maxWidth(View content,int maxDp){
+        android.widget.FrameLayout frame=new android.widget.FrameLayout(content.getContext()){
+            @Override protected void onMeasure(int w,int h){
+                int limit=dp(getContext(),maxDp),size=View.MeasureSpec.getSize(w);
+                android.widget.FrameLayout.LayoutParams p=(android.widget.FrameLayout.LayoutParams)content.getLayoutParams();
+                int wanted=Math.min(size,limit);if(p.width!=wanted){p.width=wanted;}
+                super.onMeasure(w,h);
+            }
+        };
+        frame.addView(content,new android.widget.FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_HORIZONTAL));return frame;
+    }
     static ScrollView scroll(Context c,View content) {ScrollView s=new ScrollView(c);s.setFillViewport(true);s.addView(content);return s;}
     static void pad(View v,int n) {int p=dp(v.getContext(),n);v.setPadding(p,p,p,p);}
     static void hideKeyboard(Activity a,View v) {
@@ -55,8 +72,11 @@ final class Ui {
                 android.graphics.Insets p=insets.getInsets(types);view.setPadding(p.left,p.top,p.right,p.bottom);
                 return new android.view.WindowInsets.Builder(insets).setInsets(types,android.graphics.Insets.NONE).build();
             }
-            view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
-            return insets.replaceSystemWindowInsets(0,0,0,0);
+            // Android 10: system-window insets omit the landscape camera cutout, so take the larger of the two.
+            android.view.DisplayCutout cut=insets.getDisplayCutout();
+            view.setPadding(Math.max(insets.getSystemWindowInsetLeft(),cut==null?0:cut.getSafeInsetLeft()),Math.max(insets.getSystemWindowInsetTop(),cut==null?0:cut.getSafeInsetTop()),
+                Math.max(insets.getSystemWindowInsetRight(),cut==null?0:cut.getSafeInsetRight()),Math.max(insets.getSystemWindowInsetBottom(),cut==null?0:cut.getSafeInsetBottom()));
+            return insets.replaceSystemWindowInsets(0,0,0,0).consumeDisplayCutout();
         });
     }
 }
