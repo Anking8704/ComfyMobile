@@ -32,7 +32,7 @@ public final class MainActivity extends Activity {
     final ExecutorService worker=Executors.newFixedThreadPool(2);
     final ExecutorService images=Executors.newFixedThreadPool(2);
     private final Handler handler=new Handler(Looper.getMainLooper());
-    private LinearLayout root,nav;
+    private LinearLayout root,nav,header;
     private FrameLayout body;
     private TextView connection,progress;
     private EditorView editor;
@@ -42,7 +42,9 @@ public final class MainActivity extends Activity {
     private ComfyClient client;
     private SharedPreferences prefs;
     private int page=0;
-    private boolean active=false,generating=false;
+    private boolean active=false;
+    private final SubmissionState submission=new SubmissionState();
+    private Button generateButton;
     private String exportJson;
 
     @Override public void onCreate(Bundle state){
@@ -54,7 +56,7 @@ public final class MainActivity extends Activity {
             if(Build.VERSION.SDK_INT>=30){android.graphics.Insets p=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.ime());view.setPadding(p.left,p.top,p.right,p.bottom);return WindowInsets.CONSUMED;}
             view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets.consumeSystemWindowInsets();
         });
-        LinearLayout header=Ui.row(this);Ui.pad(header,10);
+        header=Ui.row(this);Ui.pad(header,10);
         TextView name=Ui.text(this,"ComfyMobile",18,Ui.TEXT);header.addView(name,new LinearLayout.LayoutParams(0,-2,1));
         header.addView(Ui.button(this,"连接设置",false,this::showConnection));root.addView(header);
         connection=Ui.text(this,"电脑算力 · 手机创作",12,Ui.MUTED);connection.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),Ui.dp(this,5));root.addView(connection);
@@ -70,6 +72,7 @@ public final class MainActivity extends Activity {
     void message(String text){Toast.makeText(this,text,Toast.LENGTH_LONG).show();}
 
     private void showConnection(){
+        header.setVisibility(View.VISIBLE);connection.setVisibility(View.VISIBLE);
         page=-1;results=null;body.removeAllViews();nav.setVisibility(View.GONE);
         LinearLayout content=Ui.column(this);Ui.pad(content,22);
         Ui.add(content,Ui.title(this,"连接家中电脑"));
@@ -93,6 +96,7 @@ public final class MainActivity extends Activity {
     }
     private void attach(ServerAddress address){
         if(server!=null&&server.origin().equals(address.origin())&&editor!=null)return;
+        submission.reset();previewData=null;
         if(editor!=null)editor.destroy();server=address;client=new ComfyClient(server);prefs.edit().putString("server",server.origin()).apply();
         editor=new EditorView(this,server,text->{connection.setText(server.origin()+" · "+text);});prompt.resetTarget();
         connection.setText(server.origin()+" · 正在加载编辑器");
@@ -101,6 +105,7 @@ public final class MainActivity extends Activity {
         if(editor==null){showConnection();return;}
         Ui.hideKeyboard(this,root);page=index;body.removeAllViews();results=null;
         nav.setVisibility(index==1?View.GONE:View.VISIBLE);
+        header.setVisibility(index==1?View.GONE:View.VISIBLE);connection.setVisibility(index==1?View.GONE:View.VISIBLE);
         for(int i=0;i<nav.getChildCount();i++)((Button)nav.getChildAt(i)).setTextColor(i==index?Ui.TEAL:Ui.MUTED);
         if(index==0){
             LinearLayout pageView=Ui.column(this);
@@ -111,7 +116,7 @@ public final class MainActivity extends Activity {
             Ui.weighted(tools,Ui.button(this,"节点",false,nodes::list));Ui.weighted(tools,Ui.button(this,"添加",false,nodes::add));
             Ui.weighted(tools,Ui.button(this,"适应",false,()->editor.command("fit",new JSONObject(),this::report)));
             Ui.weighted(tools,Ui.button(this,"更多",false,this::more));Ui.add(pageView,tools);
-            Button generate=Ui.button(this,"开始生成",true,this::generate);generate.setEnabled(!generating);Ui.add(pageView,generate);body.addView(pageView);
+            generateButton=Ui.button(this,"开始生成",true,this::generate);generateButton.setEnabled(!submission.pending());Ui.add(pageView,generateButton);body.addView(pageView);
         }else if(index==1){
             if(prompt.view().getParent()!=null)((ViewGroup)prompt.view().getParent()).removeView(prompt.view());body.addView(prompt.view());
             // Android's back gesture returns to the workflow after dismissing the IME.
@@ -119,20 +124,26 @@ public final class MainActivity extends Activity {
     }
     private void report(JSONObject r){if(!r.optBoolean("ok"))message(r.optString("error"));}
     private void generate(){
-        if(generating)return;generating=true;connection.setText(server.origin()+" · 正在提交");
-        editor.command("generate",new JSONObject(),r->{generating=false;
+        final int epoch=submission.begin();if(epoch<0)return;
+        if(generateButton!=null)generateButton.setEnabled(false);connection.setText(server.origin()+" · 正在提交");
+        editor.command("generate",new JSONObject(),r->{if(!submission.finish(epoch))return;if(generateButton!=null)generateButton.setEnabled(true);
             if(r.optBoolean("ok")){message("提交操作已完成，请查看任务；节点校验错误请看编辑器提示");connection.setText(server.origin()+" · 已发送生成请求");}
             else{report(r);connection.setText(server.origin()+" · 提交未确认，请检查任务");}
         });
     }
     private void more(){
-        new AlertDialog.Builder(this).setTitle("工作流操作").setItems(new String[]{"导入工作流 JSON","导出工作流 JSON","撤销","查看实时预览","刷新编辑器"},(d,index)->{
+        new AlertDialog.Builder(this).setTitle("工作流操作").setItems(new String[]{"导入工作流 JSON","导出工作流 JSON","撤销","查看实时预览","刷新编辑器","导出上次导入前备份"},(d,index)->{
             switch(index){
                 case 0:Intent input=new Intent(Intent.ACTION_OPEN_DOCUMENT);input.addCategory(Intent.CATEGORY_OPENABLE);input.setType("*/*");startActivityForResult(input,101);break;
                 case 1:editor.command("export",new JSONObject(),r->{if(!r.optBoolean("ok")){report(r);return;}exportJson=r.optString("json");Intent output=new Intent(Intent.ACTION_CREATE_DOCUMENT);output.addCategory(Intent.CATEGORY_OPENABLE);output.setType("application/json");output.putExtra(Intent.EXTRA_TITLE,"ComfyMobile-workflow.json");startActivityForResult(output,102);});break;
                 case 2:editor.command("undo",new JSONObject(),this::report);break;
                 case 3:showPreview();break;
                 case 4:new AlertDialog.Builder(this).setMessage("刷新会重新加载电脑端编辑器。请先保存或导出尚未保存的工作流。").setPositiveButton("刷新",(dd,w)->{editor.web.reload();prompt.resetTarget();}).setNegativeButton("取消",null).show();break;
+                case 5:worker.execute(()->{
+                    try(InputStream in=new java.io.FileInputStream(new java.io.File(getFilesDir(),"workflow-before-import.json"));ByteArrayOutputStream out=new ByteArrayOutputStream()){
+                        ServerConnection.copy(in,out,20*1024*1024);String backup=out.toString("UTF-8");runOnUiThread(()->{exportJson=backup;Intent output=new Intent(Intent.ACTION_CREATE_DOCUMENT);output.addCategory(Intent.CATEGORY_OPENABLE);output.setType("application/json");output.putExtra(Intent.EXTRA_TITLE,"ComfyMobile-before-import.json");startActivityForResult(output,102);});
+                    }catch(Exception e){runOnUiThread(()->message("还没有导入前备份，或备份无法读取"));}
+                });break;
             }
         }).setNegativeButton("关闭",null).show();
     }
@@ -178,8 +189,23 @@ public final class MainActivity extends Activity {
         if(result!=RESULT_OK||data==null||data.getData()==null)return;Uri uri=data.getData();
         if(request==101){worker.execute(()->{try(InputStream in=getContentResolver().openInputStream(uri);ByteArrayOutputStream out=new ByteArrayOutputStream()){
             if(in==null)throw new IllegalStateException("文件无法读取");byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>20*1024*1024)throw new IllegalStateException("工作流 JSON 过大");out.write(buffer,0,n);}String json=out.toString("UTF-8");
-            new JSONObject(json);runOnUiThread(()->new AlertDialog.Builder(this).setMessage("导入将替换当前画布，建议先导出保存现有工作流。").setPositiveButton("导入",(d,w)->editor.command("import",NodePanel.args("json",json),r->{report(r);if(r.optBoolean("ok")){prompt.resetTarget();message("工作流已导入");}})).setNegativeButton("取消",null).show());
+            new JSONObject(json);runOnUiThread(()->new AlertDialog.Builder(this).setMessage("导入将替换当前画布；会先在手机保存一份导入前备份。").setPositiveButton("导入",(d,w)->importWithBackup(json)).setNegativeButton("取消",null).show());
         }catch(Exception e){runOnUiThread(()->message("导入失败："+e.getMessage()));}});}
         if(request==102&&exportJson!=null){String json=exportJson;exportJson=null;worker.execute(()->{try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new IllegalStateException("无法写入文件");out.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));runOnUiThread(()->message("工作流已导出"));}catch(Exception e){runOnUiThread(()->message("导出失败："+e.getMessage()));}});}
+    }
+    private void importWithBackup(String json){
+        final EditorView destination=editor;
+        destination.command("export",new JSONObject(),before->{
+            if(!before.optBoolean("ok")){report(before);return;}
+            worker.execute(()->{
+                try(OutputStream out=new java.io.FileOutputStream(new java.io.File(getFilesDir(),"workflow-before-import.json"))){
+                    out.write(before.optString("json").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    runOnUiThread(()->{
+                        if(editor!=destination){message("连接已改变，已取消导入");return;}
+                        destination.command("import",NodePanel.args("json",json),r->{report(r);prompt.resetTarget();if(r.optBoolean("ok"))message("工作流已导入");});
+                    });
+                }catch(Exception e){runOnUiThread(()->message("无法保存导入前备份，已取消导入："+e.getMessage()));}
+            });
+        });
     }
 }

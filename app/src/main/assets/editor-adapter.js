@@ -4,7 +4,7 @@
   const targets = new Map();
   const events = [];
   const pageId = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-  let serial = 0, submitting = false, hookedApi = null;
+  let serial = 0, submitting = false, hookedApi = null, submission = null;
   const fail = error => ({ ok: false, error: String(error?.message || error) });
   const app = () => window.comfyAPI?.app?.app || window.app;
   const graph = () => {
@@ -38,6 +38,7 @@
       if (textOnly && typeof widget.value !== 'string') return [];
       if (!['string','number','boolean'].includes(typeof widget.value)) return [];
       const options = typeof widget.options?.values === 'function' ? widget.options.values() : widget.options?.values;
+      if(textOnly && (widget.type==='combo' || Array.isArray(options))) return [];
       return [{ nodeTitle: node.title || node.type, nodeType: node.type, name: widget.name || `字段 ${index+1}`,
         value: widget.value, type: widget.type || typeof widget.value,
         options: Array.isArray(options) ? options.filter(x=>['string','number'].includes(typeof x)) : null,
@@ -71,6 +72,12 @@
     const api = window.comfyAPI?.api?.api;
     if (!api || api === hookedApi) return;
     hookedApi = api;
+    api.addEventListener('promptQueueing', event => {
+      if(submission && submission.requestId==null) submission.requestId=event.detail?.requestId;
+    });
+    api.addEventListener('promptQueued', event => {
+      if(submission && event.detail?.requestId===submission.requestId && event.detail?.batchCount>0) submission.accepted=true;
+    });
     for (const type of ['status','progress','executing','executed','execution_error','execution_start','execution_success'])
       api.addEventListener(type, event => push(type,event.detail));
     const preview = blob => {
@@ -149,17 +156,28 @@
         const data=JSON.parse(args.json);
         if(!data || !Array.isArray(data.nodes)) throw new Error('请选择 ComfyUI 工作流 JSON，不能导入 API prompt');
         for(const n of data.nodes) if(n.id==null || typeof n.type!=='string') throw new Error('工作流节点数据不完整');
-        await instance.loadGraphData(data);targets.clear();return {ok:true};
+        const previous=JSON.parse(JSON.stringify((instance.rootGraph || current).serialize()));
+        try {
+          const loaded=await instance.loadGraphData(data);
+          if(loaded===false) throw new Error('工作流未成功载入');
+        } catch(error) {
+          let restored=false;
+          try {restored=(await instance.loadGraphData(previous))!==false;}catch(ignored){}
+          targets.clear();
+          throw new Error(`${error.message || error}；${restored?'原工作流已恢复':'自动恢复失败，请从“更多”导出导入前备份'}`);
+        }
+        targets.clear();return {ok:true};
       }
       case 'generate': {
         if(submitting || instance.processingQueue) throw new Error('正在提交，请勿重复点击');
         if(typeof instance.queuePrompt!=='function') throw new Error('当前前端不支持提交，请使用编辑器中的运行按钮');
         submitting=true;
+        const attempt={requestId:null,accepted:false};submission=attempt;
         try {
           const accepted=await instance.queuePrompt(0,1);
-          if(accepted===false) throw new Error('前端未确认提交成功，请查看节点校验提示和任务记录');
+          if(accepted===false || !attempt.accepted) throw new Error('未收到电脑接受此任务的确认，请查看节点校验提示和任务记录，勿直接重复生成');
           return {ok:true};
-        } finally {submitting=false;}
+        } finally {submitting=false;submission=null;}
       }
       default:throw new Error('不支持的操作');
     }

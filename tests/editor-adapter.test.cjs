@@ -9,7 +9,7 @@ function fixture() {
   const node = { id: 6, type: 'ThirdPartyText', title: '自定义文本', widgets: [widget, {name:'seed',value:42}], pos: [0,0], connect() {}, inputs: [], outputs: [], setDirtyCanvas() {} };
   const graph = { _nodes: [node], getNodeById(id) { return this._nodes.find(n => String(n.id) === String(id)); }, serialize() { return { nodes: this._nodes.map(n=>({id:n.id,type:n.type,widgets_values:n.widgets.map(w=>w.value)})) }; }, setDirtyCanvas() {}, configure(data) { this._nodes = data.nodes.map(n=>({...node,id:n.id,widgets:[{...widget,value:n.widgets_values[0]}]})); } };
   const listeners = new Map();
-  const app = { graph, canvas: { selected_nodes: {}, setDirty() {}, selectNode() {}, ds:{scale:1,offset:[0,0]} }, queuePrompt: async()=>{}, loadGraphData: async(data)=>{graph.configure(data);} };
+  const app = { graph, canvas: { selected_nodes: {}, setDirty() {}, selectNode() {}, ds:{scale:1,offset:[0,0]} }, queuePrompt: async()=>{listeners.get('promptQueueing')?.({detail:{requestId:1}});listeners.get('promptQueued')?.({detail:{requestId:1,batchCount:1}});return true;}, loadGraphData: async(data)=>{graph.configure(data);return true;} };
   const document = { createElement() { return {}; }, head:{appendChild(){}}, querySelector(){return null;} };
   const ctx = vm.createContext({ console, setTimeout, clearTimeout, document, Event, URL, Blob, TextDecoder });
   ctx.window = ctx;
@@ -26,6 +26,11 @@ test('custom string widgets are editable and numeric widgets are not prompt fiel
   const target=result.fields[0].target;
   assert.equal((await f.bridge.writeField(target,'新词\nmoonlight')).ok,true);
   assert.equal(f.widget.value,'新词\nmoonlight'); assert.equal(f.widget.last,f.widget.value);
+});
+test('string-valued dropdowns stay in node parameters and are excluded from prompt fields',async()=>{
+  const f=fixture();f.node.widgets.push({name:'sampler_name',type:'combo',value:'euler',options:{values:['euler','dpmpp_2m']}});
+  assert.equal((await f.bridge.fields()).fields.length,1);
+  assert.equal((await f.bridge.command('nodes',{})).fields.some(field=>field.name==='sampler_name'),true);
 });
 test('stale field is rejected when a different graph has the same ids', async()=>{
   const f=fixture(), target=(await f.bridge.fields()).fields[0].target;
@@ -61,6 +66,7 @@ test('simultaneous generate commands do not duplicate submission',async()=>{
   f.app.queuePrompt=()=>{calls++;return new Promise(r=>{complete=r;});};
   const first=f.bridge.command('generate',{});
   assert.equal((await f.bridge.command('generate',{})).ok,false);
+  f.listeners.get('promptQueueing')?.({detail:{requestId:1}});f.listeners.get('promptQueued')?.({detail:{requestId:1,batchCount:1}});
   complete(); assert.equal((await first).ok,true); assert.equal(calls,1);
 });
 test('failed generation is reported without retry',async()=>{
@@ -71,6 +77,20 @@ test('failed generation is reported without retry',async()=>{
 test('frontend validation rejection is not reported as submitted',async()=>{
   const f=fixture();f.app.queuePrompt=async()=>false;
   assert.equal((await f.bridge.command('generate',{})).ok,false);
+});
+test('swallowed frontend network error without promptQueued is not reported as accepted',async()=>{
+  const f=fixture();f.app.queuePrompt=async()=>{f.listeners.get('promptQueueing')?.({detail:{requestId:2}});return true;};
+  assert.equal((await f.bridge.command('generate',{})).ok,false);
+});
+test('a false loadGraphData result is reported as a failed import',async()=>{
+  const f=fixture();f.app.loadGraphData=async()=>false;
+  assert.equal((await f.bridge.command('import',{json:'{"nodes":[]}'})).ok,false);
+});
+test('a destructive failed import restores the previous graph',async()=>{
+  const f=fixture();let calls=0;
+  f.app.loadGraphData=async(data)=>{calls++;if(calls===1){f.graph._nodes=[];return false;}f.graph.configure(data);return true;};
+  const result=await f.bridge.command('import',{json:'{"nodes":[]}'});
+  assert.equal(result.ok,false);assert.equal(f.graph._nodes.length,1);assert.equal(f.graph._nodes[0].widgets[0].value,'原始提示词');
 });
 test('a target from another page load cannot collide with fresh field tokens',async()=>{
   const first=fixture(),second=fixture();const old=(await first.bridge.fields()).fields[0].target;

@@ -24,21 +24,24 @@ final class PromptEditor {
     private final TextView targetLabel, counter;
     private final ArrayDeque<String> undo=new ArrayDeque<>(),redo=new ArrayDeque<>();
     private JSONObject target;
-    private String last="", saved="", fieldName="未选择字段";
+    private String last="", fieldName="未选择字段";
+    private final DraftState draftState;
     private boolean replacing=false;
     private int selection=0;
 
     PromptEditor(MainActivity a) {
         activity=a;prefs=a.getSharedPreferences("prompts",0);root=Ui.column(a);Ui.pad(root,14);
-        Ui.add(root,Ui.title(a,"提示词编辑"));
+        TextView heading=Ui.title(a,"提示词编辑");Ui.add(root,heading);
         targetLabel=Ui.text(a,"未绑定字段 · 草稿仅存手机",13,Ui.MUTED);Ui.add(root,targetLabel);
-        Ui.add(root,Ui.button(a,"选择节点文字字段",false,this::chooseField));
+        targetLabel.setSingleLine(true);targetLabel.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        View choose=Ui.button(a,"选择节点文字字段",false,this::chooseField);Ui.add(root,choose);
         text=Ui.input(a,"先选择工作流中的文字字段，或在这里准备草稿",true);
         text.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         text.setImeOptions(EditorInfo.IME_FLAG_NO_ENTER_ACTION|EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         text.setTextSize(17);text.setSelectAllOnFocus(false);text.setGravity(Gravity.TOP|Gravity.START);
         root.addView(text,new LinearLayout.LayoutParams(-1,0,1));
-        String draft=prefs.getString("draft","");text.setText(draft);last=draft;saved=draft;
+        String draft=prefs.getString("draft","");draftState=new DraftState(draft);text.setText(draft);last=draft;
+        if(!draft.isEmpty()){fieldName=prefs.getString("draft_label","未绑定字段");targetLabel.setText("手机草稿 · 上次："+fieldName);}
         counter=Ui.text(a,"草稿保存在手机",12,Ui.MUTED);Ui.add(root,counter);
         text.addTextChangedListener(new TextWatcher(){
             @Override public void beforeTextChanged(CharSequence s,int start,int count,int after){}
@@ -59,11 +62,21 @@ final class PromptEditor {
         Ui.weighted(library,Ui.button(a,"模板",false,()->library("模板","templates",true)));
         Ui.weighted(library,Ui.button(a,"历史",false,()->library("历史","history",true)));
         Ui.add(root,library);
+        LinearLayout compact=Ui.row(a);
+        Ui.weighted(compact,Ui.button(a,"常用词",false,()->library("常用词","favorites",false)));
+        Ui.weighted(compact,Ui.button(a,"更多工具",false,()->new AlertDialog.Builder(a).setItems(new String[]{"撤销","重做","权重 −","权重 +","模板","历史"},(d,i)->{switch(i){case 0:history(false);break;case 1:history(true);break;case 2:weight(-.1);break;case 3:weight(.1);break;case 4:library("模板","templates",true);break;case 5:library("历史","history",true);break;}}).show()));
+        Ui.weighted(compact,Ui.button(a,"选择字段",false,this::chooseField));
+        Ui.add(root,compact);compact.setVisibility(View.GONE);
         Ui.add(root,Ui.button(a,"保存到节点",true,this::save));
+        root.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
+            boolean small=(b-t)<Ui.dp(a,500);
+            for(View extra:new View[]{heading,choose,counter,tools,library})extra.setVisibility(small?View.GONE:View.VISIBLE);
+            compact.setVisibility(small?View.VISIBLE:View.GONE);
+        });
     }
 
     View view(){return root;}
-    boolean dirty(){return !saved.equals(text.getText().toString());}
+    boolean dirty(){return draftState.dirty(text.getText().toString());}
     void focus(){text.requestFocus();}
     void persist(){prefs.edit().putString("draft",text.getText().toString()).putString("draft_label",fieldName).apply();}
     void resetTarget(){target=null;targetLabel.setText("连接已更换 · 草稿已保留，请重新选择字段");}
@@ -87,8 +100,9 @@ final class PromptEditor {
                     String label=f.optString("nodeTitle")+" · #"+f.optJSONObject("target").optString("nodeId")+" / "+f.optString("name");
                     if(!label.toLowerCase(java.util.Locale.ROOT).contains(filter))continue;
                     Ui.add(list,Ui.button(activity,label,false,()->{
-                        Runnable load=()->{target=f.optJSONObject("target");fieldName=label;targetLabel.setText(label);replace(f.optString("value"));saved=text.getText().toString();undo.clear();redo.clear();dialog.dismiss();focus();};
-                        if(dirty())new AlertDialog.Builder(activity).setMessage("手机草稿将被所选字段内容替换。先收藏或复制可保留草稿。").setPositiveButton("载入字段",(d,w)->load.run()).setNegativeButton("取消",null).show();
+                        Runnable bind=()->{target=f.optJSONObject("target");fieldName=label;targetLabel.setText(label);draftState.bind(f.optString("value"));dialog.dismiss();persist();focus();};
+                        Runnable load=()->{replace(f.optString("value"));bind.run();undo.clear();redo.clear();};
+                        if(dirty())new AlertDialog.Builder(activity).setMessage("保留手机草稿并绑定此字段，还是载入节点当前文字？保存到节点前不会提交生成。").setPositiveButton("保留草稿并绑定",(d,w)->bind.run()).setNeutralButton("载入节点文字",(d,w)->load.run()).setNegativeButton("取消",null).show();
                         else load.run();
                     }));
                 }
@@ -154,7 +168,7 @@ final class PromptEditor {
         final String value=text.getText().toString();
         activity.editor().call("writeField",new JSONArray().put(target).put(value),r->{
             if(!r.optBoolean("ok")){activity.message(r.optString("error"));return;}
-            saved=value;remember("history",value);activity.message("已写回节点；工作流可在编辑器中保存或导出");
+            draftState.saved(value);remember("history",value);activity.message("已写回节点；工作流可在编辑器中保存或导出");
         });
     }
     static class SimpleWatcher implements TextWatcher {

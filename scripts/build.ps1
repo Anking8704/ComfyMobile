@@ -1,4 +1,4 @@
-param([switch]$TestOnly)
+﻿param([switch]$TestOnly)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
@@ -10,11 +10,11 @@ $tools = "$root\.tools\unpacked\build-tools\android-15"
 $android = "$root\.tools\unpacked\platform\android-35\android.jar"
 New-Item -ItemType Directory -Force -Path build/tests,build/classes,build/generated,build/dex,output | Out-Null
 function Check-Exit([string]$step) { if ($LASTEXITCODE -ne 0) { throw "$step 失败 ($LASTEXITCODE)" } }
-$core = 'ServerAddress','ServerConnection','PromptText','MediaRef' | ForEach-Object { "app/src/main/java/local/comfymobile/$_.java" }
+$core = 'ServerAddress','ServerConnection','PromptText','MediaRef','DraftState','SubmissionState' | ForEach-Object { "app/src/main/java/local/comfymobile/$_.java" }
 $tests = Get-ChildItem tests -Filter '*.java' | ForEach-Object FullName
 & $javac -encoding UTF-8 -d build/tests @core @tests
 Check-Exit '编译主机端测试'
-foreach ($test in 'ServerAddressTest','ServerConnectionTest','PromptTextTest','MediaRefTest') {
+foreach ($test in 'ServerAddressTest','ServerConnectionTest','PromptTextTest','MediaRefTest','DraftStateTest','SubmissionStateTest') {
     & $java '-Dfile.encoding=UTF-8' -cp build/tests "local.comfymobile.$test"
     Check-Exit $test
 }

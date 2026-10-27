@@ -1,4 +1,4 @@
-param([int]$Port=8188,[switch]$CheckOnly,[string[]]$ExtraArgs=@())
+﻿param([int]$Port=8188,[switch]$CheckOnly,[string[]]$ExtraArgs=@())
 $ErrorActionPreference='Stop'
 if($Port -lt 1 -or $Port -gt 65535){throw '端口必须在 1 到 65535 之间'}
 $project=Split-Path $PSScriptRoot -Parent
