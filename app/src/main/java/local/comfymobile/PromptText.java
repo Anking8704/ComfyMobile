@@ -20,4 +20,15 @@ public final class PromptText {
         String replacement="("+phrase+":"+String.format(Locale.ROOT,"%.1f",Math.max(.1,previous+delta))+")";
         return new Edit(text.substring(0,start)+replacement+text.substring(end),start,start+replacement.length());
     }
+    public static Edit insert(String text,int start,int end,String snippet){
+        start=Math.max(0,Math.min(start,text.length()));end=Math.max(start,Math.min(end,text.length()));
+        String left=text.substring(0,start),right=text.substring(end);
+        String before="",after="";
+        if(start==end){
+            if(!left.isEmpty()&&!Character.isWhitespace(left.charAt(left.length()-1))&&",;([".indexOf(left.charAt(left.length()-1))<0)before=", ";
+            if(!right.isEmpty()&&!Character.isWhitespace(right.charAt(0))&&",;)]".indexOf(right.charAt(0))<0)after=", ";
+        }
+        String replacement=before+snippet+after;int caret=start+before.length()+snippet.length();
+        return new Edit(left+replacement+right,caret,caret);
+    }
 }

@@ -48,4 +48,15 @@ final class Ui {
     static void hideKeyboard(Activity a,View v) {
         ((android.view.inputmethod.InputMethodManager)a.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(),0);
     }
+    static void applyInsets(View root){
+        root.setOnApplyWindowInsetsListener((view,insets)->{
+            if(android.os.Build.VERSION.SDK_INT>=30){
+                int types=android.view.WindowInsets.Type.systemBars()|android.view.WindowInsets.Type.displayCutout()|android.view.WindowInsets.Type.ime();
+                android.graphics.Insets p=insets.getInsets(types);view.setPadding(p.left,p.top,p.right,p.bottom);
+                return new android.view.WindowInsets.Builder(insets).setInsets(types,android.graphics.Insets.NONE).build();
+            }
+            view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            return insets.replaceSystemWindowInsets(0,0,0,0);
+        });
+    }
 }

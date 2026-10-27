@@ -1,0 +1,2665 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "subject",
+      "label": "人物与主体",
+      "items": [
+        {
+          "label": "成年女性",
+          "text": "adult woman",
+          "keywords": "成年女性 adult woman",
+          "translation": "成年女性"
+        },
+        {
+          "label": "成年男性",
+          "text": "adult man",
+          "keywords": "成年男性 adult man",
+          "translation": "成年男性"
+        },
+        {
+          "label": "成年人物",
+          "text": "adult person",
+          "keywords": "成年人物 adult person",
+          "translation": "成年人物"
+        },
+        {
+          "label": "独自一人",
+          "text": "solo",
+          "keywords": "独自一人 solo",
+          "translation": "独自一人"
+        },
+        {
+          "label": "两位成年人",
+          "text": "two adults",
+          "keywords": "两位成年人 two adults",
+          "translation": "两位成年人"
+        },
+        {
+          "label": "人物群像",
+          "text": "group portrait",
+          "keywords": "人物群像 group portrait",
+          "translation": "人物群像"
+        },
+        {
+          "label": "旅行者",
+          "text": "traveler",
+          "keywords": "旅行者 traveler",
+          "translation": "旅行者"
+        },
+        {
+          "label": "园丁",
+          "text": "gardener",
+          "keywords": "园丁 gardener",
+          "translation": "园丁"
+        },
+        {
+          "label": "音乐家",
+          "text": "musician",
+          "keywords": "音乐家 musician",
+          "translation": "音乐家"
+        },
+        {
+          "label": "画家",
+          "text": "painter",
+          "keywords": "画家 painter",
+          "translation": "画家"
+        },
+        {
+          "label": "宇航员",
+          "text": "astronaut",
+          "keywords": "宇航员 astronaut",
+          "translation": "宇航员"
+        },
+        {
+          "label": "探险家",
+          "text": "explorer",
+          "keywords": "探险家 explorer",
+          "translation": "探险家"
+        },
+        {
+          "label": "图书管理员",
+          "text": "librarian",
+          "keywords": "图书管理员 librarian",
+          "translation": "图书管理员"
+        },
+        {
+          "label": "厨师",
+          "text": "chef",
+          "keywords": "厨师 chef",
+          "translation": "厨师"
+        },
+        {
+          "label": "骑士",
+          "text": "knight",
+          "keywords": "骑士 knight",
+          "translation": "骑士"
+        },
+        {
+          "label": "机械师",
+          "text": "mechanic",
+          "keywords": "机械师 mechanic",
+          "translation": "机械师"
+        }
+      ]
+    },
+    {
+      "id": "face",
+      "label": "面部与眼睛",
+      "items": [
+        {
+          "label": "蓝色眼睛",
+          "text": "blue eyes",
+          "keywords": "蓝色眼睛 blue eyes",
+          "translation": "蓝色眼睛"
+        },
+        {
+          "label": "绿色眼睛",
+          "text": "green eyes",
+          "keywords": "绿色眼睛 green eyes",
+          "translation": "绿色眼睛"
+        },
+        {
+          "label": "棕色眼睛",
+          "text": "brown eyes",
+          "keywords": "棕色眼睛 brown eyes",
+          "translation": "棕色眼睛"
+        },
+        {
+          "label": "金色眼睛",
+          "text": "golden eyes",
+          "keywords": "金色眼睛 golden eyes",
+          "translation": "金色眼睛"
+        },
+        {
+          "label": "紫色眼睛",
+          "text": "purple eyes",
+          "keywords": "紫色眼睛 purple eyes",
+          "translation": "紫色眼睛"
+        },
+        {
+          "label": "灰色眼睛",
+          "text": "gray eyes",
+          "keywords": "灰色眼睛 gray eyes",
+          "translation": "灰色眼睛"
+        },
+        {
+          "label": "异色瞳",
+          "text": "heterochromia",
+          "keywords": "异色瞳 heterochromia",
+          "translation": "异色瞳"
+        },
+        {
+          "label": "雀斑",
+          "text": "freckles",
+          "keywords": "雀斑 freckles",
+          "translation": "雀斑"
+        },
+        {
+          "label": "酒窝",
+          "text": "dimples",
+          "keywords": "酒窝 dimples",
+          "translation": "酒窝"
+        },
+        {
+          "label": "浓眉",
+          "text": "thick eyebrows",
+          "keywords": "浓眉 thick eyebrows",
+          "translation": "浓眉"
+        },
+        {
+          "label": "弯曲眉毛",
+          "text": "arched eyebrows",
+          "keywords": "弯曲眉毛 arched eyebrows",
+          "translation": "弯曲眉毛"
+        },
+        {
+          "label": "长睫毛",
+          "text": "long eyelashes",
+          "keywords": "长睫毛 long eyelashes",
+          "translation": "长睫毛"
+        },
+        {
+          "label": "圆脸",
+          "text": "round face",
+          "keywords": "圆脸 round face",
+          "translation": "圆脸"
+        },
+        {
+          "label": "棱角面庞",
+          "text": "angular face",
+          "keywords": "棱角面庞 angular face",
+          "translation": "棱角面庞"
+        },
+        {
+          "label": "尖耳朵",
+          "text": "pointed ears",
+          "keywords": "尖耳朵 pointed ears",
+          "translation": "尖耳朵"
+        },
+        {
+          "label": "面部彩绘",
+          "text": "face paint",
+          "keywords": "面部彩绘 face paint",
+          "translation": "面部彩绘"
+        }
+      ]
+    },
+    {
+      "id": "hair",
+      "label": "发型",
+      "items": [
+        {
+          "label": "长发",
+          "text": "long hair",
+          "keywords": "长发 long hair",
+          "translation": "长发"
+        },
+        {
+          "label": "短发",
+          "text": "short hair",
+          "keywords": "短发 short hair",
+          "translation": "短发"
+        },
+        {
+          "label": "中长发",
+          "text": "medium hair",
+          "keywords": "中长发 medium hair",
+          "translation": "中长发"
+        },
+        {
+          "label": "直发",
+          "text": "straight hair",
+          "keywords": "直发 straight hair",
+          "translation": "直发"
+        },
+        {
+          "label": "波浪发",
+          "text": "wavy hair",
+          "keywords": "波浪发 wavy hair",
+          "translation": "波浪发"
+        },
+        {
+          "label": "卷发",
+          "text": "curly hair",
+          "keywords": "卷发 curly hair",
+          "translation": "卷发"
+        },
+        {
+          "label": "马尾辫",
+          "text": "ponytail",
+          "keywords": "马尾辫 ponytail",
+          "translation": "马尾辫"
+        },
+        {
+          "label": "高马尾",
+          "text": "high ponytail",
+          "keywords": "高马尾 high ponytail",
+          "translation": "高马尾"
+        },
+        {
+          "label": "双马尾",
+          "text": "twintails",
+          "keywords": "双马尾 twintails",
+          "translation": "双马尾"
+        },
+        {
+          "label": "麻花辫",
+          "text": "braid",
+          "keywords": "麻花辫 braid",
+          "translation": "麻花辫"
+        },
+        {
+          "label": "侧边编发",
+          "text": "side braid",
+          "keywords": "侧边编发 side braid",
+          "translation": "侧边编发"
+        },
+        {
+          "label": "盘发",
+          "text": "hair bun",
+          "keywords": "盘发 hair bun",
+          "translation": "盘发"
+        },
+        {
+          "label": "波波头",
+          "text": "bob cut",
+          "keywords": "波波头 bob cut",
+          "translation": "波波头"
+        },
+        {
+          "label": "齐刘海",
+          "text": "blunt bangs",
+          "keywords": "齐刘海 blunt bangs",
+          "translation": "齐刘海"
+        },
+        {
+          "label": "侧扫刘海",
+          "text": "side-swept bangs",
+          "keywords": "侧扫刘海 side-swept bangs",
+          "translation": "侧扫刘海"
+        },
+        {
+          "label": "凌乱头发",
+          "text": "messy hair",
+          "keywords": "凌乱头发 messy hair",
+          "translation": "凌乱头发"
+        }
+      ]
+    },
+    {
+      "id": "hair_color",
+      "label": "发色",
+      "items": [
+        {
+          "label": "黑发",
+          "text": "black hair",
+          "keywords": "黑发 black hair",
+          "translation": "黑发"
+        },
+        {
+          "label": "棕发",
+          "text": "brown hair",
+          "keywords": "棕发 brown hair",
+          "translation": "棕发"
+        },
+        {
+          "label": "金发",
+          "text": "blonde hair",
+          "keywords": "金发 blonde hair",
+          "translation": "金发"
+        },
+        {
+          "label": "白发",
+          "text": "white hair",
+          "keywords": "白发 white hair",
+          "translation": "白发"
+        },
+        {
+          "label": "银发",
+          "text": "silver hair",
+          "keywords": "银发 silver hair",
+          "translation": "银发"
+        },
+        {
+          "label": "灰发",
+          "text": "gray hair",
+          "keywords": "灰发 gray hair",
+          "translation": "灰发"
+        },
+        {
+          "label": "红发",
+          "text": "red hair",
+          "keywords": "红发 red hair",
+          "translation": "红发"
+        },
+        {
+          "label": "橙色头发",
+          "text": "orange hair",
+          "keywords": "橙色头发 orange hair",
+          "translation": "橙色头发"
+        },
+        {
+          "label": "粉色头发",
+          "text": "pink hair",
+          "keywords": "粉色头发 pink hair",
+          "translation": "粉色头发"
+        },
+        {
+          "label": "蓝发",
+          "text": "blue hair",
+          "keywords": "蓝发 blue hair",
+          "translation": "蓝发"
+        },
+        {
+          "label": "紫发",
+          "text": "purple hair",
+          "keywords": "紫发 purple hair",
+          "translation": "紫发"
+        },
+        {
+          "label": "绿发",
+          "text": "green hair",
+          "keywords": "绿发 green hair",
+          "translation": "绿发"
+        },
+        {
+          "label": "青色头发",
+          "text": "teal hair",
+          "keywords": "青色头发 teal hair",
+          "translation": "青色头发"
+        },
+        {
+          "label": "双色头发",
+          "text": "two-tone hair",
+          "keywords": "双色头发 two-tone hair",
+          "translation": "双色头发"
+        },
+        {
+          "label": "渐变发色",
+          "text": "gradient hair",
+          "keywords": "渐变发色 gradient hair",
+          "translation": "渐变发色"
+        },
+        {
+          "label": "彩虹头发",
+          "text": "rainbow hair",
+          "keywords": "彩虹头发 rainbow hair",
+          "translation": "彩虹头发"
+        }
+      ]
+    },
+    {
+      "id": "expression",
+      "label": "表情与视线",
+      "items": [
+        {
+          "label": "微笑",
+          "text": "smile",
+          "keywords": "微笑 smile",
+          "translation": "微笑"
+        },
+        {
+          "label": "大笑",
+          "text": "laughing",
+          "keywords": "大笑 laughing",
+          "translation": "大笑"
+        },
+        {
+          "label": "温和表情",
+          "text": "gentle expression",
+          "keywords": "温和表情 gentle expression",
+          "translation": "温和表情"
+        },
+        {
+          "label": "坚定表情",
+          "text": "determined expression",
+          "keywords": "坚定表情 determined expression",
+          "translation": "坚定表情"
+        },
+        {
+          "label": "若有所思",
+          "text": "thoughtful expression",
+          "keywords": "若有所思 thoughtful expression",
+          "translation": "若有所思"
+        },
+        {
+          "label": "惊讶表情",
+          "text": "surprised expression",
+          "keywords": "惊讶表情 surprised expression",
+          "translation": "惊讶表情"
+        },
+        {
+          "label": "平静表情",
+          "text": "calm expression",
+          "keywords": "平静表情 calm expression",
+          "translation": "平静表情"
+        },
+        {
+          "label": "严肃表情",
+          "text": "serious expression",
+          "keywords": "严肃表情 serious expression",
+          "translation": "严肃表情"
+        },
+        {
+          "label": "好奇表情",
+          "text": "curious expression",
+          "keywords": "好奇表情 curious expression",
+          "translation": "好奇表情"
+        },
+        {
+          "label": "忧郁表情",
+          "text": "melancholic expression",
+          "keywords": "忧郁表情 melancholic expression",
+          "translation": "忧郁表情"
+        },
+        {
+          "label": "顽皮微笑",
+          "text": "playful grin",
+          "keywords": "顽皮微笑 playful grin",
+          "translation": "顽皮微笑"
+        },
+        {
+          "label": "闭眼",
+          "text": "closed eyes",
+          "keywords": "闭眼 closed eyes",
+          "translation": "闭眼"
+        },
+        {
+          "label": "看向观者",
+          "text": "looking at viewer",
+          "keywords": "看向观者 looking at viewer",
+          "translation": "看向观者"
+        },
+        {
+          "label": "看向别处",
+          "text": "looking away",
+          "keywords": "看向别处 looking away",
+          "translation": "看向别处"
+        },
+        {
+          "label": "仰望",
+          "text": "looking up",
+          "keywords": "仰望 looking up",
+          "translation": "仰望"
+        },
+        {
+          "label": "侧目",
+          "text": "sideways glance",
+          "keywords": "侧目 sideways glance",
+          "translation": "侧目"
+        }
+      ]
+    },
+    {
+      "id": "pose",
+      "label": "姿势",
+      "items": [
+        {
+          "label": "站立",
+          "text": "standing",
+          "keywords": "站立 standing",
+          "translation": "站立"
+        },
+        {
+          "label": "坐姿",
+          "text": "sitting",
+          "keywords": "坐姿 sitting",
+          "translation": "坐姿"
+        },
+        {
+          "label": "跪姿",
+          "text": "kneeling",
+          "keywords": "跪姿 kneeling",
+          "translation": "跪姿"
+        },
+        {
+          "label": "蹲姿",
+          "text": "crouching",
+          "keywords": "蹲姿 crouching",
+          "translation": "蹲姿"
+        },
+        {
+          "label": "倚靠墙面",
+          "text": "leaning against a wall",
+          "keywords": "倚靠墙面 leaning against a wall",
+          "translation": "倚靠墙面"
+        },
+        {
+          "label": "交叉双臂",
+          "text": "arms crossed",
+          "keywords": "交叉双臂 arms crossed",
+          "translation": "交叉双臂"
+        },
+        {
+          "label": "双手叉腰",
+          "text": "hands on hips",
+          "keywords": "双手叉腰 hands on hips",
+          "translation": "双手叉腰"
+        },
+        {
+          "label": "双手背后",
+          "text": "hands behind back",
+          "keywords": "双手背后 hands behind back",
+          "translation": "双手背后"
+        },
+        {
+          "label": "抬起一只手",
+          "text": "one hand raised",
+          "keywords": "抬起一只手 one hand raised",
+          "translation": "抬起一只手"
+        },
+        {
+          "label": "双臂伸展",
+          "text": "outstretched arms",
+          "keywords": "双臂伸展 outstretched arms",
+          "translation": "双臂伸展"
+        },
+        {
+          "label": "回眸",
+          "text": "looking back over shoulder",
+          "keywords": "回眸 looking back over shoulder",
+          "translation": "回眸"
+        },
+        {
+          "label": "单膝跪地",
+          "text": "one knee on the ground",
+          "keywords": "单膝跪地 one knee on the ground",
+          "translation": "单膝跪地"
+        },
+        {
+          "label": "盘腿而坐",
+          "text": "sitting cross-legged",
+          "keywords": "盘腿而坐 sitting cross-legged",
+          "translation": "盘腿而坐"
+        },
+        {
+          "label": "背向观者",
+          "text": "back to viewer",
+          "keywords": "背向观者 back to viewer",
+          "translation": "背向观者"
+        },
+        {
+          "label": "正面姿态",
+          "text": "facing forward",
+          "keywords": "正面姿态 facing forward",
+          "translation": "正面姿态"
+        },
+        {
+          "label": "侧身站立",
+          "text": "standing in profile",
+          "keywords": "侧身站立 standing in profile",
+          "translation": "侧身站立"
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "label": "动作与活动",
+      "items": [
+        {
+          "label": "行走",
+          "text": "walking",
+          "keywords": "行走 walking",
+          "translation": "行走"
+        },
+        {
+          "label": "奔跑",
+          "text": "running",
+          "keywords": "奔跑 running",
+          "translation": "奔跑"
+        },
+        {
+          "label": "跳跃",
+          "text": "jumping",
+          "keywords": "跳跃 jumping",
+          "translation": "跳跃"
+        },
+        {
+          "label": "跳舞",
+          "text": "dancing",
+          "keywords": "跳舞 dancing",
+          "translation": "跳舞"
+        },
+        {
+          "label": "挥手",
+          "text": "waving",
+          "keywords": "挥手 waving",
+          "translation": "挥手"
+        },
+        {
+          "label": "读书",
+          "text": "reading a book",
+          "keywords": "读书 reading a book",
+          "translation": "读书"
+        },
+        {
+          "label": "写信",
+          "text": "writing a letter",
+          "keywords": "写信 writing a letter",
+          "translation": "写信"
+        },
+        {
+          "label": "画画",
+          "text": "painting on canvas",
+          "keywords": "画画 painting on canvas",
+          "translation": "画画"
+        },
+        {
+          "label": "演奏小提琴",
+          "text": "playing violin",
+          "keywords": "演奏小提琴 playing violin",
+          "translation": "演奏小提琴"
+        },
+        {
+          "label": "弹奏钢琴",
+          "text": "playing piano",
+          "keywords": "弹奏钢琴 playing piano",
+          "translation": "弹奏钢琴"
+        },
+        {
+          "label": "撑伞",
+          "text": "holding an umbrella",
+          "keywords": "撑伞 holding an umbrella",
+          "translation": "撑伞"
+        },
+        {
+          "label": "提灯笼",
+          "text": "carrying a lantern",
+          "keywords": "提灯笼 carrying a lantern",
+          "translation": "提灯笼"
+        },
+        {
+          "label": "种花",
+          "text": "planting flowers",
+          "keywords": "种花 planting flowers",
+          "translation": "种花"
+        },
+        {
+          "label": "泡茶",
+          "text": "brewing tea",
+          "keywords": "泡茶 brewing tea",
+          "translation": "泡茶"
+        },
+        {
+          "label": "骑自行车",
+          "text": "riding a bicycle",
+          "keywords": "骑自行车 riding a bicycle",
+          "translation": "骑自行车"
+        },
+        {
+          "label": "观察星空",
+          "text": "stargazing",
+          "keywords": "观察星空 stargazing",
+          "translation": "观察星空"
+        }
+      ]
+    },
+    {
+      "id": "outfit",
+      "label": "服装",
+      "items": [
+        {
+          "label": "白色礼裙",
+          "text": "white gown",
+          "keywords": "白色礼裙 white gown",
+          "translation": "白色礼裙"
+        },
+        {
+          "label": "长款连衣裙",
+          "text": "long dress",
+          "keywords": "长款连衣裙 long dress",
+          "translation": "长款连衣裙"
+        },
+        {
+          "label": "风衣",
+          "text": "trench coat",
+          "keywords": "风衣 trench coat",
+          "translation": "风衣"
+        },
+        {
+          "label": "冬季外套",
+          "text": "winter coat",
+          "keywords": "冬季外套 winter coat",
+          "translation": "冬季外套"
+        },
+        {
+          "label": "针织毛衣",
+          "text": "knitted sweater",
+          "keywords": "针织毛衣 knitted sweater",
+          "translation": "针织毛衣"
+        },
+        {
+          "label": "高领毛衣",
+          "text": "turtleneck sweater",
+          "keywords": "高领毛衣 turtleneck sweater",
+          "translation": "高领毛衣"
+        },
+        {
+          "label": "衬衫",
+          "text": "button-up shirt",
+          "keywords": "衬衫 button-up shirt",
+          "translation": "衬衫"
+        },
+        {
+          "label": "西装",
+          "text": "business suit",
+          "keywords": "西装 business suit",
+          "translation": "西装"
+        },
+        {
+          "label": "连帽衫",
+          "text": "hoodie",
+          "keywords": "连帽衫 hoodie",
+          "translation": "连帽衫"
+        },
+        {
+          "label": "牛仔夹克",
+          "text": "denim jacket",
+          "keywords": "牛仔夹克 denim jacket",
+          "translation": "牛仔夹克"
+        },
+        {
+          "label": "长袍",
+          "text": "robe",
+          "keywords": "长袍 robe",
+          "translation": "长袍"
+        },
+        {
+          "label": "斗篷",
+          "text": "cloak",
+          "keywords": "斗篷 cloak",
+          "translation": "斗篷"
+        },
+        {
+          "label": "轻甲",
+          "text": "light armor",
+          "keywords": "轻甲 light armor",
+          "translation": "轻甲"
+        },
+        {
+          "label": "太空服",
+          "text": "spacesuit",
+          "keywords": "太空服 spacesuit",
+          "translation": "太空服"
+        },
+        {
+          "label": "围裙",
+          "text": "apron",
+          "keywords": "围裙 apron",
+          "translation": "围裙"
+        },
+        {
+          "label": "和服",
+          "text": "kimono",
+          "keywords": "和服 kimono",
+          "translation": "和服"
+        }
+      ]
+    },
+    {
+      "id": "clothing_details",
+      "label": "服装细节",
+      "items": [
+        {
+          "label": "百褶裙",
+          "text": "pleated skirt",
+          "keywords": "百褶裙 pleated skirt",
+          "translation": "百褶裙"
+        },
+        {
+          "label": "长裤",
+          "text": "trousers",
+          "keywords": "长裤 trousers",
+          "translation": "长裤"
+        },
+        {
+          "label": "宽腿裤",
+          "text": "wide-leg pants",
+          "keywords": "宽腿裤 wide-leg pants",
+          "translation": "宽腿裤"
+        },
+        {
+          "label": "高跟鞋",
+          "text": "high heels",
+          "keywords": "高跟鞋 high heels",
+          "translation": "高跟鞋"
+        },
+        {
+          "label": "皮靴",
+          "text": "leather boots",
+          "keywords": "皮靴 leather boots",
+          "translation": "皮靴"
+        },
+        {
+          "label": "运动鞋",
+          "text": "sneakers",
+          "keywords": "运动鞋 sneakers",
+          "translation": "运动鞋"
+        },
+        {
+          "label": "系带鞋",
+          "text": "lace-up shoes",
+          "keywords": "系带鞋 lace-up shoes",
+          "translation": "系带鞋"
+        },
+        {
+          "label": "长袖",
+          "text": "long sleeves",
+          "keywords": "长袖 long sleeves",
+          "translation": "长袖"
+        },
+        {
+          "label": "泡泡袖",
+          "text": "puffy sleeves",
+          "keywords": "泡泡袖 puffy sleeves",
+          "translation": "泡泡袖"
+        },
+        {
+          "label": "刺绣装饰",
+          "text": "embroidered details",
+          "keywords": "刺绣装饰 embroidered details",
+          "translation": "刺绣装饰"
+        },
+        {
+          "label": "蕾丝饰边",
+          "text": "lace trim",
+          "keywords": "蕾丝饰边 lace trim",
+          "translation": "蕾丝饰边"
+        },
+        {
+          "label": "荷叶边袖口",
+          "text": "ruffled cuffs",
+          "keywords": "荷叶边袖口 ruffled cuffs",
+          "translation": "荷叶边袖口"
+        },
+        {
+          "label": "高领领口",
+          "text": "high collar",
+          "keywords": "高领领口 high collar",
+          "translation": "高领领口"
+        },
+        {
+          "label": "金色纽扣",
+          "text": "gold buttons",
+          "keywords": "金色纽扣 gold buttons",
+          "translation": "金色纽扣"
+        },
+        {
+          "label": "宽腰带",
+          "text": "wide belt",
+          "keywords": "宽腰带 wide belt",
+          "translation": "宽腰带"
+        },
+        {
+          "label": "多层布料",
+          "text": "layered fabric",
+          "keywords": "多层布料 layered fabric",
+          "translation": "多层布料"
+        }
+      ]
+    },
+    {
+      "id": "accessories",
+      "label": "配饰",
+      "items": [
+        {
+          "label": "眼镜",
+          "text": "glasses",
+          "keywords": "眼镜 glasses",
+          "translation": "眼镜"
+        },
+        {
+          "label": "圆框眼镜",
+          "text": "round glasses",
+          "keywords": "圆框眼镜 round glasses",
+          "translation": "圆框眼镜"
+        },
+        {
+          "label": "墨镜",
+          "text": "sunglasses",
+          "keywords": "墨镜 sunglasses",
+          "translation": "墨镜"
+        },
+        {
+          "label": "宽檐帽",
+          "text": "wide-brimmed hat",
+          "keywords": "宽檐帽 wide-brimmed hat",
+          "translation": "宽檐帽"
+        },
+        {
+          "label": "贝雷帽",
+          "text": "beret",
+          "keywords": "贝雷帽 beret",
+          "translation": "贝雷帽"
+        },
+        {
+          "label": "围巾",
+          "text": "scarf",
+          "keywords": "围巾 scarf",
+          "translation": "围巾"
+        },
+        {
+          "label": "手套",
+          "text": "gloves",
+          "keywords": "手套 gloves",
+          "translation": "手套"
+        },
+        {
+          "label": "耳环",
+          "text": "earrings",
+          "keywords": "耳环 earrings",
+          "translation": "耳环"
+        },
+        {
+          "label": "项链",
+          "text": "necklace",
+          "keywords": "项链 necklace",
+          "translation": "项链"
+        },
+        {
+          "label": "吊坠",
+          "text": "pendant",
+          "keywords": "吊坠 pendant",
+          "translation": "吊坠"
+        },
+        {
+          "label": "手链",
+          "text": "bracelet",
+          "keywords": "手链 bracelet",
+          "translation": "手链"
+        },
+        {
+          "label": "腕表",
+          "text": "wristwatch",
+          "keywords": "腕表 wristwatch",
+          "translation": "腕表"
+        },
+        {
+          "label": "发饰",
+          "text": "hair ornament",
+          "keywords": "发饰 hair ornament",
+          "translation": "发饰"
+        },
+        {
+          "label": "丝带",
+          "text": "ribbon",
+          "keywords": "丝带 ribbon",
+          "translation": "丝带"
+        },
+        {
+          "label": "背包",
+          "text": "backpack",
+          "keywords": "背包 backpack",
+          "translation": "背包"
+        },
+        {
+          "label": "挎包",
+          "text": "shoulder bag",
+          "keywords": "挎包 shoulder bag",
+          "translation": "挎包"
+        }
+      ]
+    },
+    {
+      "id": "composition",
+      "label": "构图",
+      "items": [
+        {
+          "label": "特写",
+          "text": "close-up",
+          "keywords": "特写 close-up",
+          "translation": "特写"
+        },
+        {
+          "label": "头像",
+          "text": "headshot",
+          "keywords": "头像 headshot",
+          "translation": "头像"
+        },
+        {
+          "label": "胸像",
+          "text": "bust portrait",
+          "keywords": "胸像 bust portrait",
+          "translation": "胸像"
+        },
+        {
+          "label": "半身像",
+          "text": "upper body",
+          "keywords": "半身像 upper body",
+          "translation": "半身像"
+        },
+        {
+          "label": "全身像",
+          "text": "full body",
+          "keywords": "全身像 full body",
+          "translation": "全身像"
+        },
+        {
+          "label": "环境人像",
+          "text": "environmental portrait",
+          "keywords": "环境人像 environmental portrait",
+          "translation": "环境人像"
+        },
+        {
+          "label": "居中构图",
+          "text": "centered composition",
+          "keywords": "居中构图 centered composition",
+          "translation": "居中构图"
+        },
+        {
+          "label": "三分法构图",
+          "text": "rule of thirds",
+          "keywords": "三分法构图 rule of thirds",
+          "translation": "三分法构图"
+        },
+        {
+          "label": "对称构图",
+          "text": "symmetrical composition",
+          "keywords": "对称构图 symmetrical composition",
+          "translation": "对称构图"
+        },
+        {
+          "label": "对角构图",
+          "text": "diagonal composition",
+          "keywords": "对角构图 diagonal composition",
+          "translation": "对角构图"
+        },
+        {
+          "label": "引导线",
+          "text": "leading lines",
+          "keywords": "引导线 leading lines",
+          "translation": "引导线"
+        },
+        {
+          "label": "框中框",
+          "text": "frame within a frame",
+          "keywords": "框中框 frame within a frame",
+          "translation": "框中框"
+        },
+        {
+          "label": "留白",
+          "text": "negative space",
+          "keywords": "留白 negative space",
+          "translation": "留白"
+        },
+        {
+          "label": "前景遮挡",
+          "text": "foreground framing",
+          "keywords": "前景遮挡 foreground framing",
+          "translation": "前景遮挡"
+        },
+        {
+          "label": "分层景深",
+          "text": "layered depth",
+          "keywords": "分层景深 layered depth",
+          "translation": "分层景深"
+        },
+        {
+          "label": "宽幅全景",
+          "text": "wide panorama",
+          "keywords": "宽幅全景 wide panorama",
+          "translation": "宽幅全景"
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "label": "镜头与视角",
+      "items": [
+        {
+          "label": "平视",
+          "text": "eye-level view",
+          "keywords": "平视 eye-level view",
+          "translation": "平视"
+        },
+        {
+          "label": "低机位",
+          "text": "low-angle view",
+          "keywords": "低机位 low-angle view",
+          "translation": "低机位"
+        },
+        {
+          "label": "高机位",
+          "text": "high-angle view",
+          "keywords": "高机位 high-angle view",
+          "translation": "高机位"
+        },
+        {
+          "label": "鸟瞰",
+          "text": "bird's-eye view",
+          "keywords": "鸟瞰 bird's-eye view",
+          "translation": "鸟瞰"
+        },
+        {
+          "label": "俯视平铺",
+          "text": "top-down view",
+          "keywords": "俯视平铺 top-down view",
+          "translation": "俯视平铺"
+        },
+        {
+          "label": "过肩视角",
+          "text": "over-the-shoulder view",
+          "keywords": "过肩视角 over-the-shoulder view",
+          "translation": "过肩视角"
+        },
+        {
+          "label": "侧面视角",
+          "text": "side view",
+          "keywords": "侧面视角 side view",
+          "translation": "侧面视角"
+        },
+        {
+          "label": "四分之三视角",
+          "text": "three-quarter view",
+          "keywords": "四分之三视角 three-quarter view",
+          "translation": "四分之三视角"
+        },
+        {
+          "label": "广角镜头",
+          "text": "wide-angle lens",
+          "keywords": "广角镜头 wide-angle lens",
+          "translation": "广角镜头"
+        },
+        {
+          "label": "长焦镜头",
+          "text": "telephoto lens",
+          "keywords": "长焦镜头 telephoto lens",
+          "translation": "长焦镜头"
+        },
+        {
+          "label": "微距摄影",
+          "text": "macro photography",
+          "keywords": "微距摄影 macro photography",
+          "translation": "微距摄影"
+        },
+        {
+          "label": "浅景深",
+          "text": "shallow depth of field",
+          "keywords": "浅景深 shallow depth of field",
+          "translation": "浅景深"
+        },
+        {
+          "label": "深景深",
+          "text": "deep depth of field",
+          "keywords": "深景深 deep depth of field",
+          "translation": "深景深"
+        },
+        {
+          "label": "散景",
+          "text": "bokeh",
+          "keywords": "散景 bokeh",
+          "translation": "散景"
+        },
+        {
+          "label": "移轴效果",
+          "text": "tilt-shift effect",
+          "keywords": "移轴效果 tilt-shift effect",
+          "translation": "移轴效果"
+        },
+        {
+          "label": "运动模糊",
+          "text": "motion blur",
+          "keywords": "运动模糊 motion blur",
+          "translation": "运动模糊"
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "label": "光线",
+      "items": [
+        {
+          "label": "柔和光线",
+          "text": "soft lighting",
+          "keywords": "柔和光线 soft lighting",
+          "translation": "柔和光线"
+        },
+        {
+          "label": "窗边光",
+          "text": "window light",
+          "keywords": "窗边光 window light",
+          "translation": "窗边光"
+        },
+        {
+          "label": "轮廓光",
+          "text": "rim lighting",
+          "keywords": "轮廓光 rim lighting",
+          "translation": "轮廓光"
+        },
+        {
+          "label": "逆光",
+          "text": "backlighting",
+          "keywords": "逆光 backlighting",
+          "translation": "逆光"
+        },
+        {
+          "label": "侧光",
+          "text": "side lighting",
+          "keywords": "侧光 side lighting",
+          "translation": "侧光"
+        },
+        {
+          "label": "顶光",
+          "text": "overhead lighting",
+          "keywords": "顶光 overhead lighting",
+          "translation": "顶光"
+        },
+        {
+          "label": "漫射日光",
+          "text": "diffused daylight",
+          "keywords": "漫射日光 diffused daylight",
+          "translation": "漫射日光"
+        },
+        {
+          "label": "黄金时刻光",
+          "text": "golden hour lighting",
+          "keywords": "黄金时刻光 golden hour lighting",
+          "translation": "黄金时刻光"
+        },
+        {
+          "label": "月光",
+          "text": "moonlight",
+          "keywords": "月光 moonlight",
+          "translation": "月光"
+        },
+        {
+          "label": "烛光",
+          "text": "candlelight",
+          "keywords": "烛光 candlelight",
+          "translation": "烛光"
+        },
+        {
+          "label": "霓虹灯光",
+          "text": "neon lighting",
+          "keywords": "霓虹灯光 neon lighting",
+          "translation": "霓虹灯光"
+        },
+        {
+          "label": "体积光",
+          "text": "volumetric lighting",
+          "keywords": "体积光 volumetric lighting",
+          "translation": "体积光"
+        },
+        {
+          "label": "斑驳树影",
+          "text": "dappled sunlight",
+          "keywords": "斑驳树影 dappled sunlight",
+          "translation": "斑驳树影"
+        },
+        {
+          "label": "柔和阴影",
+          "text": "soft shadows",
+          "keywords": "柔和阴影 soft shadows",
+          "translation": "柔和阴影"
+        },
+        {
+          "label": "强烈明暗",
+          "text": "dramatic chiaroscuro",
+          "keywords": "强烈明暗 dramatic chiaroscuro",
+          "translation": "强烈明暗"
+        },
+        {
+          "label": "明亮高调",
+          "text": "high-key lighting",
+          "keywords": "明亮高调 high-key lighting",
+          "translation": "明亮高调"
+        }
+      ]
+    },
+    {
+      "id": "palette",
+      "label": "色彩与色调",
+      "items": [
+        {
+          "label": "粉彩色调",
+          "text": "pastel palette",
+          "keywords": "粉彩色调 pastel palette",
+          "translation": "粉彩色调"
+        },
+        {
+          "label": "低饱和色",
+          "text": "muted colors",
+          "keywords": "低饱和色 muted colors",
+          "translation": "低饱和色"
+        },
+        {
+          "label": "鲜艳色彩",
+          "text": "vibrant colors",
+          "keywords": "鲜艳色彩 vibrant colors",
+          "translation": "鲜艳色彩"
+        },
+        {
+          "label": "单色调",
+          "text": "monochrome",
+          "keywords": "单色调 monochrome",
+          "translation": "单色调"
+        },
+        {
+          "label": "黑白配色",
+          "text": "black and white",
+          "keywords": "黑白配色 black and white",
+          "translation": "黑白配色"
+        },
+        {
+          "label": "暖色调",
+          "text": "warm tones",
+          "keywords": "暖色调 warm tones",
+          "translation": "暖色调"
+        },
+        {
+          "label": "冷色调",
+          "text": "cool tones",
+          "keywords": "冷色调 cool tones",
+          "translation": "冷色调"
+        },
+        {
+          "label": "青橙配色",
+          "text": "teal and orange",
+          "keywords": "青橙配色 teal and orange",
+          "translation": "青橙配色"
+        },
+        {
+          "label": "互补色",
+          "text": "complementary colors",
+          "keywords": "互补色 complementary colors",
+          "translation": "互补色"
+        },
+        {
+          "label": "类似色",
+          "text": "analogous colors",
+          "keywords": "类似色 analogous colors",
+          "translation": "类似色"
+        },
+        {
+          "label": "大地色",
+          "text": "earth tones",
+          "keywords": "大地色 earth tones",
+          "translation": "大地色"
+        },
+        {
+          "label": "珠宝色",
+          "text": "jewel tones",
+          "keywords": "珠宝色 jewel tones",
+          "translation": "珠宝色"
+        },
+        {
+          "label": "淡蓝配金",
+          "text": "pale blue and gold",
+          "keywords": "淡蓝配金 pale blue and gold",
+          "translation": "淡蓝配金"
+        },
+        {
+          "label": "柔粉配薄荷绿",
+          "text": "soft pink and mint",
+          "keywords": "柔粉配薄荷绿 soft pink and mint",
+          "translation": "柔粉配薄荷绿"
+        },
+        {
+          "label": "选择性色彩",
+          "text": "selective color",
+          "keywords": "选择性色彩 selective color",
+          "translation": "选择性色彩"
+        },
+        {
+          "label": "有限色板",
+          "text": "limited palette",
+          "keywords": "有限色板 limited palette",
+          "translation": "有限色板"
+        }
+      ]
+    },
+    {
+      "id": "style",
+      "label": "视觉风格",
+      "items": [
+        {
+          "label": "动漫风格",
+          "text": "anime style",
+          "keywords": "动漫风格 anime style",
+          "translation": "动漫风格"
+        },
+        {
+          "label": "漫画风格",
+          "text": "manga style",
+          "keywords": "漫画风格 manga style",
+          "translation": "漫画风格"
+        },
+        {
+          "label": "赛璐璐着色",
+          "text": "cel shading",
+          "keywords": "赛璐璐着色 cel shading",
+          "translation": "赛璐璐着色"
+        },
+        {
+          "label": "清晰线稿",
+          "text": "clean lineart",
+          "keywords": "清晰线稿 clean lineart",
+          "translation": "清晰线稿"
+        },
+        {
+          "label": "粗轮廓线",
+          "text": "bold outlines",
+          "keywords": "粗轮廓线 bold outlines",
+          "translation": "粗轮廓线"
+        },
+        {
+          "label": "平涂色块",
+          "text": "flat colors",
+          "keywords": "平涂色块 flat colors",
+          "translation": "平涂色块"
+        },
+        {
+          "label": "柔和着色",
+          "text": "soft shading",
+          "keywords": "柔和着色 soft shading",
+          "translation": "柔和着色"
+        },
+        {
+          "label": "半写实",
+          "text": "semi-realistic",
+          "keywords": "半写实 semi-realistic",
+          "translation": "半写实"
+        },
+        {
+          "label": "照片写实",
+          "text": "photorealistic",
+          "keywords": "照片写实 photorealistic",
+          "translation": "照片写实"
+        },
+        {
+          "label": "绘画质感",
+          "text": "painterly",
+          "keywords": "绘画质感 painterly",
+          "translation": "绘画质感"
+        },
+        {
+          "label": "极简主义",
+          "text": "minimalism",
+          "keywords": "极简主义 minimalism",
+          "translation": "极简主义"
+        },
+        {
+          "label": "装饰艺术",
+          "text": "art deco",
+          "keywords": "装饰艺术 art deco",
+          "translation": "装饰艺术"
+        },
+        {
+          "label": "新艺术风格",
+          "text": "art nouveau",
+          "keywords": "新艺术风格 art nouveau",
+          "translation": "新艺术风格"
+        },
+        {
+          "label": "复古未来",
+          "text": "retrofuturism",
+          "keywords": "复古未来 retrofuturism",
+          "translation": "复古未来"
+        },
+        {
+          "label": "等距视图",
+          "text": "isometric art",
+          "keywords": "等距视图 isometric art",
+          "translation": "等距视图"
+        },
+        {
+          "label": "像素画",
+          "text": "pixel art",
+          "keywords": "像素画 pixel art",
+          "translation": "像素画"
+        }
+      ]
+    },
+    {
+      "id": "medium",
+      "label": "艺术媒介",
+      "items": [
+        {
+          "label": "数字插画",
+          "text": "digital illustration",
+          "keywords": "数字插画 digital illustration",
+          "translation": "数字插画"
+        },
+        {
+          "label": "水彩画",
+          "text": "watercolor painting",
+          "keywords": "水彩画 watercolor painting",
+          "translation": "水彩画"
+        },
+        {
+          "label": "油画",
+          "text": "oil painting",
+          "keywords": "油画 oil painting",
+          "translation": "油画"
+        },
+        {
+          "label": "水粉画",
+          "text": "gouache painting",
+          "keywords": "水粉画 gouache painting",
+          "translation": "水粉画"
+        },
+        {
+          "label": "墨水画",
+          "text": "ink drawing",
+          "keywords": "墨水画 ink drawing",
+          "translation": "墨水画"
+        },
+        {
+          "label": "铅笔素描",
+          "text": "pencil sketch",
+          "keywords": "铅笔素描 pencil sketch",
+          "translation": "铅笔素描"
+        },
+        {
+          "label": "炭笔画",
+          "text": "charcoal drawing",
+          "keywords": "炭笔画 charcoal drawing",
+          "translation": "炭笔画"
+        },
+        {
+          "label": "彩色铅笔",
+          "text": "colored pencil drawing",
+          "keywords": "彩色铅笔 colored pencil drawing",
+          "translation": "彩色铅笔"
+        },
+        {
+          "label": "粉彩画",
+          "text": "pastel drawing",
+          "keywords": "粉彩画 pastel drawing",
+          "translation": "粉彩画"
+        },
+        {
+          "label": "木刻版画",
+          "text": "woodcut print",
+          "keywords": "木刻版画 woodcut print",
+          "translation": "木刻版画"
+        },
+        {
+          "label": "丝网印刷",
+          "text": "screen print",
+          "keywords": "丝网印刷 screen print",
+          "translation": "丝网印刷"
+        },
+        {
+          "label": "纸张拼贴",
+          "text": "paper collage",
+          "keywords": "纸张拼贴 paper collage",
+          "translation": "纸张拼贴"
+        },
+        {
+          "label": "剪纸艺术",
+          "text": "paper cut art",
+          "keywords": "剪纸艺术 paper cut art",
+          "translation": "剪纸艺术"
+        },
+        {
+          "label": "黏土模型",
+          "text": "clay model",
+          "keywords": "黏土模型 clay model",
+          "translation": "黏土模型"
+        },
+        {
+          "label": "三维渲染",
+          "text": "3D render",
+          "keywords": "三维渲染 3D render",
+          "translation": "三维渲染"
+        },
+        {
+          "label": "胶片摄影",
+          "text": "film photography",
+          "keywords": "胶片摄影 film photography",
+          "translation": "胶片摄影"
+        }
+      ]
+    },
+    {
+      "id": "landscape",
+      "label": "自然场景",
+      "items": [
+        {
+          "label": "山脉",
+          "text": "mountain range",
+          "keywords": "山脉 mountain range",
+          "translation": "山脉"
+        },
+        {
+          "label": "雪山",
+          "text": "snowy peaks",
+          "keywords": "雪山 snowy peaks",
+          "translation": "雪山"
+        },
+        {
+          "label": "森林小径",
+          "text": "forest path",
+          "keywords": "森林小径 forest path",
+          "translation": "森林小径"
+        },
+        {
+          "label": "竹林",
+          "text": "bamboo grove",
+          "keywords": "竹林 bamboo grove",
+          "translation": "竹林"
+        },
+        {
+          "label": "草地",
+          "text": "grassy meadow",
+          "keywords": "草地 grassy meadow",
+          "translation": "草地"
+        },
+        {
+          "label": "花田",
+          "text": "flower field",
+          "keywords": "花田 flower field",
+          "translation": "花田"
+        },
+        {
+          "label": "海岸悬崖",
+          "text": "coastal cliffs",
+          "keywords": "海岸悬崖 coastal cliffs",
+          "translation": "海岸悬崖"
+        },
+        {
+          "label": "沙滩",
+          "text": "sandy beach",
+          "keywords": "沙滩 sandy beach",
+          "translation": "沙滩"
+        },
+        {
+          "label": "湖畔",
+          "text": "lakeside",
+          "keywords": "湖畔 lakeside",
+          "translation": "湖畔"
+        },
+        {
+          "label": "河谷",
+          "text": "river valley",
+          "keywords": "河谷 river valley",
+          "translation": "河谷"
+        },
+        {
+          "label": "瀑布",
+          "text": "waterfall",
+          "keywords": "瀑布 waterfall",
+          "translation": "瀑布"
+        },
+        {
+          "label": "沙漠沙丘",
+          "text": "desert dunes",
+          "keywords": "沙漠沙丘 desert dunes",
+          "translation": "沙漠沙丘"
+        },
+        {
+          "label": "峡谷",
+          "text": "canyon",
+          "keywords": "峡谷 canyon",
+          "translation": "峡谷"
+        },
+        {
+          "label": "冰川",
+          "text": "glacier",
+          "keywords": "冰川 glacier",
+          "translation": "冰川"
+        },
+        {
+          "label": "火山景观",
+          "text": "volcanic landscape",
+          "keywords": "火山景观 volcanic landscape",
+          "translation": "火山景观"
+        },
+        {
+          "label": "洞穴",
+          "text": "cave interior",
+          "keywords": "洞穴 cave interior",
+          "translation": "洞穴"
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "label": "建筑与城镇",
+      "items": [
+        {
+          "label": "古堡",
+          "text": "ancient castle",
+          "keywords": "古堡 ancient castle",
+          "translation": "古堡"
+        },
+        {
+          "label": "石桥",
+          "text": "stone bridge",
+          "keywords": "石桥 stone bridge",
+          "translation": "石桥"
+        },
+        {
+          "label": "灯塔",
+          "text": "lighthouse",
+          "keywords": "灯塔 lighthouse",
+          "translation": "灯塔"
+        },
+        {
+          "label": "钟楼",
+          "text": "clock tower",
+          "keywords": "钟楼 clock tower",
+          "translation": "钟楼"
+        },
+        {
+          "label": "山村",
+          "text": "mountain village",
+          "keywords": "山村 mountain village",
+          "translation": "山村"
+        },
+        {
+          "label": "海滨小镇",
+          "text": "seaside town",
+          "keywords": "海滨小镇 seaside town",
+          "translation": "海滨小镇"
+        },
+        {
+          "label": "旧城街道",
+          "text": "old town street",
+          "keywords": "旧城街道 old town street",
+          "translation": "旧城街道"
+        },
+        {
+          "label": "摩天楼",
+          "text": "skyscraper",
+          "keywords": "摩天楼 skyscraper",
+          "translation": "摩天楼"
+        },
+        {
+          "label": "屋顶花园",
+          "text": "rooftop garden",
+          "keywords": "屋顶花园 rooftop garden",
+          "translation": "屋顶花园"
+        },
+        {
+          "label": "火车站",
+          "text": "train station",
+          "keywords": "火车站 train station",
+          "translation": "火车站"
+        },
+        {
+          "label": "温室",
+          "text": "greenhouse",
+          "keywords": "温室 greenhouse",
+          "translation": "温室"
+        },
+        {
+          "label": "神社庭院",
+          "text": "shrine courtyard",
+          "keywords": "神社庭院 shrine courtyard",
+          "translation": "神社庭院"
+        },
+        {
+          "label": "大教堂",
+          "text": "cathedral",
+          "keywords": "大教堂 cathedral",
+          "translation": "大教堂"
+        },
+        {
+          "label": "水上都市",
+          "text": "canal city",
+          "keywords": "水上都市 canal city",
+          "translation": "水上都市"
+        },
+        {
+          "label": "未来都市",
+          "text": "futuristic city",
+          "keywords": "未来都市 futuristic city",
+          "translation": "未来都市"
+        },
+        {
+          "label": "空间站",
+          "text": "space station",
+          "keywords": "空间站 space station",
+          "translation": "空间站"
+        }
+      ]
+    },
+    {
+      "id": "interior",
+      "label": "室内场景",
+      "items": [
+        {
+          "label": "舒适客厅",
+          "text": "cozy living room",
+          "keywords": "舒适客厅 cozy living room",
+          "translation": "舒适客厅"
+        },
+        {
+          "label": "阳光厨房",
+          "text": "sunlit kitchen",
+          "keywords": "阳光厨房 sunlit kitchen",
+          "translation": "阳光厨房"
+        },
+        {
+          "label": "阅读角",
+          "text": "reading nook",
+          "keywords": "阅读角 reading nook",
+          "translation": "阅读角"
+        },
+        {
+          "label": "图书馆内部",
+          "text": "library interior",
+          "keywords": "图书馆内部 library interior",
+          "translation": "图书馆内部"
+        },
+        {
+          "label": "艺术工作室",
+          "text": "art studio",
+          "keywords": "艺术工作室 art studio",
+          "translation": "艺术工作室"
+        },
+        {
+          "label": "音乐室",
+          "text": "music room",
+          "keywords": "音乐室 music room",
+          "translation": "音乐室"
+        },
+        {
+          "label": "咖啡馆内部",
+          "text": "cafe interior",
+          "keywords": "咖啡馆内部 cafe interior",
+          "translation": "咖啡馆内部"
+        },
+        {
+          "label": "古董书店",
+          "text": "antique bookshop",
+          "keywords": "古董书店 antique bookshop",
+          "translation": "古董书店"
+        },
+        {
+          "label": "博物馆展厅",
+          "text": "museum gallery",
+          "keywords": "博物馆展厅 museum gallery",
+          "translation": "博物馆展厅"
+        },
+        {
+          "label": "木质阁楼",
+          "text": "wooden attic",
+          "keywords": "木质阁楼 wooden attic",
+          "translation": "木质阁楼"
+        },
+        {
+          "label": "天文台",
+          "text": "observatory",
+          "keywords": "天文台 observatory",
+          "translation": "天文台"
+        },
+        {
+          "label": "科研实验室",
+          "text": "research laboratory",
+          "keywords": "科研实验室 research laboratory",
+          "translation": "科研实验室"
+        },
+        {
+          "label": "列车车厢",
+          "text": "train carriage",
+          "keywords": "列车车厢 train carriage",
+          "translation": "列车车厢"
+        },
+        {
+          "label": "酒店大堂",
+          "text": "hotel lobby",
+          "keywords": "酒店大堂 hotel lobby",
+          "translation": "酒店大堂"
+        },
+        {
+          "label": "剧院舞台",
+          "text": "theater stage",
+          "keywords": "剧院舞台 theater stage",
+          "translation": "剧院舞台"
+        },
+        {
+          "label": "和室",
+          "text": "tatami room",
+          "keywords": "和室 tatami room",
+          "translation": "和室"
+        }
+      ]
+    },
+    {
+      "id": "weather_time",
+      "label": "天气与时间",
+      "items": [
+        {
+          "label": "黎明",
+          "text": "dawn",
+          "keywords": "黎明 dawn",
+          "translation": "黎明"
+        },
+        {
+          "label": "日出",
+          "text": "sunrise",
+          "keywords": "日出 sunrise",
+          "translation": "日出"
+        },
+        {
+          "label": "正午",
+          "text": "midday",
+          "keywords": "正午 midday",
+          "translation": "正午"
+        },
+        {
+          "label": "日落",
+          "text": "sunset",
+          "keywords": "日落 sunset",
+          "translation": "日落"
+        },
+        {
+          "label": "暮色",
+          "text": "dusk",
+          "keywords": "暮色 dusk",
+          "translation": "暮色"
+        },
+        {
+          "label": "蓝色时刻",
+          "text": "blue hour",
+          "keywords": "蓝色时刻 blue hour",
+          "translation": "蓝色时刻"
+        },
+        {
+          "label": "夜晚",
+          "text": "night",
+          "keywords": "夜晚 night",
+          "translation": "夜晚"
+        },
+        {
+          "label": "晴朗天空",
+          "text": "clear sky",
+          "keywords": "晴朗天空 clear sky",
+          "translation": "晴朗天空"
+        },
+        {
+          "label": "阴天",
+          "text": "overcast sky",
+          "keywords": "阴天 overcast sky",
+          "translation": "阴天"
+        },
+        {
+          "label": "绵绵细雨",
+          "text": "gentle rain",
+          "keywords": "绵绵细雨 gentle rain",
+          "translation": "绵绵细雨"
+        },
+        {
+          "label": "雷暴",
+          "text": "thunderstorm",
+          "keywords": "雷暴 thunderstorm",
+          "translation": "雷暴"
+        },
+        {
+          "label": "飘雪",
+          "text": "falling snow",
+          "keywords": "飘雪 falling snow",
+          "translation": "飘雪"
+        },
+        {
+          "label": "浓雾",
+          "text": "thick fog",
+          "keywords": "浓雾 thick fog",
+          "translation": "浓雾"
+        },
+        {
+          "label": "薄雾清晨",
+          "text": "misty morning",
+          "keywords": "薄雾清晨 misty morning",
+          "translation": "薄雾清晨"
+        },
+        {
+          "label": "雨后彩虹",
+          "text": "rainbow after rain",
+          "keywords": "雨后彩虹 rainbow after rain",
+          "translation": "雨后彩虹"
+        },
+        {
+          "label": "极光",
+          "text": "aurora borealis",
+          "keywords": "极光 aurora borealis",
+          "translation": "极光"
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "label": "植物与动物",
+      "items": [
+        {
+          "label": "樱花",
+          "text": "cherry blossoms",
+          "keywords": "樱花 cherry blossoms",
+          "translation": "樱花"
+        },
+        {
+          "label": "向日葵",
+          "text": "sunflowers",
+          "keywords": "向日葵 sunflowers",
+          "translation": "向日葵"
+        },
+        {
+          "label": "薰衣草",
+          "text": "lavender",
+          "keywords": "薰衣草 lavender",
+          "translation": "薰衣草"
+        },
+        {
+          "label": "野花",
+          "text": "wildflowers",
+          "keywords": "野花 wildflowers",
+          "translation": "野花"
+        },
+        {
+          "label": "落叶",
+          "text": "fallen leaves",
+          "keywords": "落叶 fallen leaves",
+          "translation": "落叶"
+        },
+        {
+          "label": "蕨类植物",
+          "text": "ferns",
+          "keywords": "蕨类植物 ferns",
+          "translation": "蕨类植物"
+        },
+        {
+          "label": "爬藤",
+          "text": "climbing vines",
+          "keywords": "爬藤 climbing vines",
+          "translation": "爬藤"
+        },
+        {
+          "label": "蘑菇",
+          "text": "mushrooms",
+          "keywords": "蘑菇 mushrooms",
+          "translation": "蘑菇"
+        },
+        {
+          "label": "橡树",
+          "text": "oak tree",
+          "keywords": "橡树 oak tree",
+          "translation": "橡树"
+        },
+        {
+          "label": "松树",
+          "text": "pine tree",
+          "keywords": "松树 pine tree",
+          "translation": "松树"
+        },
+        {
+          "label": "猫",
+          "text": "cat",
+          "keywords": "猫 cat",
+          "translation": "猫"
+        },
+        {
+          "label": "狗",
+          "text": "dog",
+          "keywords": "狗 dog",
+          "translation": "狗"
+        },
+        {
+          "label": "狐狸",
+          "text": "fox",
+          "keywords": "狐狸 fox",
+          "translation": "狐狸"
+        },
+        {
+          "label": "鹿",
+          "text": "deer",
+          "keywords": "鹿 deer",
+          "translation": "鹿"
+        },
+        {
+          "label": "蝴蝶",
+          "text": "butterflies",
+          "keywords": "蝴蝶 butterflies",
+          "translation": "蝴蝶"
+        },
+        {
+          "label": "锦鲤",
+          "text": "koi fish",
+          "keywords": "锦鲤 koi fish",
+          "translation": "锦鲤"
+        }
+      ]
+    },
+    {
+      "id": "fantasy",
+      "label": "幻想元素",
+      "items": [
+        {
+          "label": "龙",
+          "text": "dragon",
+          "keywords": "龙 dragon",
+          "translation": "龙"
+        },
+        {
+          "label": "龙角",
+          "text": "dragon horns",
+          "keywords": "龙角 dragon horns",
+          "translation": "龙角"
+        },
+        {
+          "label": "龙尾",
+          "text": "dragon tail",
+          "keywords": "龙尾 dragon tail",
+          "translation": "龙尾"
+        },
+        {
+          "label": "精灵弓箭手",
+          "text": "elf archer",
+          "keywords": "精灵弓箭手 elf archer",
+          "translation": "精灵弓箭手"
+        },
+        {
+          "label": "森林守护者",
+          "text": "forest guardian",
+          "keywords": "森林守护者 forest guardian",
+          "translation": "森林守护者"
+        },
+        {
+          "label": "机械伙伴",
+          "text": "robot companion",
+          "keywords": "机械伙伴 robot companion",
+          "translation": "机械伙伴"
+        },
+        {
+          "label": "漂浮岛屿",
+          "text": "floating islands",
+          "keywords": "漂浮岛屿 floating islands",
+          "translation": "漂浮岛屿"
+        },
+        {
+          "label": "魔法书",
+          "text": "spellbook",
+          "keywords": "魔法书 spellbook",
+          "translation": "魔法书"
+        },
+        {
+          "label": "发光符文",
+          "text": "glowing runes",
+          "keywords": "发光符文 glowing runes",
+          "translation": "发光符文"
+        },
+        {
+          "label": "魔法圆环",
+          "text": "magic circle",
+          "keywords": "魔法圆环 magic circle",
+          "translation": "魔法圆环"
+        },
+        {
+          "label": "水晶洞窟",
+          "text": "crystal cavern",
+          "keywords": "水晶洞窟 crystal cavern",
+          "translation": "水晶洞窟"
+        },
+        {
+          "label": "星空斗篷",
+          "text": "star-patterned cloak",
+          "keywords": "星空斗篷 star-patterned cloak",
+          "translation": "星空斗篷"
+        },
+        {
+          "label": "漂浮水晶",
+          "text": "floating crystals",
+          "keywords": "漂浮水晶 floating crystals",
+          "translation": "漂浮水晶"
+        },
+        {
+          "label": "梦幻门户",
+          "text": "enchanted portal",
+          "keywords": "梦幻门户 enchanted portal",
+          "translation": "梦幻门户"
+        },
+        {
+          "label": "蒸汽飞艇",
+          "text": "steampunk airship",
+          "keywords": "蒸汽飞艇 steampunk airship",
+          "translation": "蒸汽飞艇"
+        },
+        {
+          "label": "巨型机甲",
+          "text": "giant mecha",
+          "keywords": "巨型机甲 giant mecha",
+          "translation": "巨型机甲"
+        }
+      ]
+    },
+    {
+      "id": "objects",
+      "label": "物品与静物",
+      "items": [
+        {
+          "label": "陶瓷茶杯",
+          "text": "ceramic teacup",
+          "keywords": "陶瓷茶杯 ceramic teacup",
+          "translation": "陶瓷茶杯"
+        },
+        {
+          "label": "玻璃花瓶",
+          "text": "glass vase",
+          "keywords": "玻璃花瓶 glass vase",
+          "translation": "玻璃花瓶"
+        },
+        {
+          "label": "花束",
+          "text": "bouquet",
+          "keywords": "花束 bouquet",
+          "translation": "花束"
+        },
+        {
+          "label": "怀表",
+          "text": "pocket watch",
+          "keywords": "怀表 pocket watch",
+          "translation": "怀表"
+        },
+        {
+          "label": "指南针",
+          "text": "compass",
+          "keywords": "指南针 compass",
+          "translation": "指南针"
+        },
+        {
+          "label": "地图",
+          "text": "map",
+          "keywords": "地图 map",
+          "translation": "地图"
+        },
+        {
+          "label": "旅行箱",
+          "text": "suitcase",
+          "keywords": "旅行箱 suitcase",
+          "translation": "旅行箱"
+        },
+        {
+          "label": "钢笔",
+          "text": "fountain pen",
+          "keywords": "钢笔 fountain pen",
+          "translation": "钢笔"
+        },
+        {
+          "label": "打开的笔记本",
+          "text": "open notebook",
+          "keywords": "打开的笔记本 open notebook",
+          "translation": "打开的笔记本"
+        },
+        {
+          "label": "复古相机",
+          "text": "vintage camera",
+          "keywords": "复古相机 vintage camera",
+          "translation": "复古相机"
+        },
+        {
+          "label": "望远镜",
+          "text": "telescope",
+          "keywords": "望远镜 telescope",
+          "translation": "望远镜"
+        },
+        {
+          "label": "玻璃瓶",
+          "text": "glass bottle",
+          "keywords": "玻璃瓶 glass bottle",
+          "translation": "玻璃瓶"
+        },
+        {
+          "label": "果篮",
+          "text": "fruit basket",
+          "keywords": "果篮 fruit basket",
+          "translation": "果篮"
+        },
+        {
+          "label": "面包与糕点",
+          "text": "bread and pastries",
+          "keywords": "面包与糕点 bread and pastries",
+          "translation": "面包与糕点"
+        },
+        {
+          "label": "折纸鹤",
+          "text": "origami crane",
+          "keywords": "折纸鹤 origami crane",
+          "translation": "折纸鹤"
+        },
+        {
+          "label": "棋盘",
+          "text": "chessboard",
+          "keywords": "棋盘 chessboard",
+          "translation": "棋盘"
+        }
+      ]
+    },
+    {
+      "id": "materials",
+      "label": "材质与表面",
+      "items": [
+        {
+          "label": "丝绸",
+          "text": "silk",
+          "keywords": "丝绸 silk",
+          "translation": "丝绸"
+        },
+        {
+          "label": "天鹅绒",
+          "text": "velvet",
+          "keywords": "天鹅绒 velvet",
+          "translation": "天鹅绒"
+        },
+        {
+          "label": "亚麻",
+          "text": "linen",
+          "keywords": "亚麻 linen",
+          "translation": "亚麻"
+        },
+        {
+          "label": "皮革",
+          "text": "leather",
+          "keywords": "皮革 leather",
+          "translation": "皮革"
+        },
+        {
+          "label": "拉丝金属",
+          "text": "brushed metal",
+          "keywords": "拉丝金属 brushed metal",
+          "translation": "拉丝金属"
+        },
+        {
+          "label": "抛光银",
+          "text": "polished silver",
+          "keywords": "抛光银 polished silver",
+          "translation": "抛光银"
+        },
+        {
+          "label": "锈蚀铁",
+          "text": "rusted iron",
+          "keywords": "锈蚀铁 rusted iron",
+          "translation": "锈蚀铁"
+        },
+        {
+          "label": "青铜",
+          "text": "bronze",
+          "keywords": "青铜 bronze",
+          "translation": "青铜"
+        },
+        {
+          "label": "磨砂玻璃",
+          "text": "frosted glass",
+          "keywords": "磨砂玻璃 frosted glass",
+          "translation": "磨砂玻璃"
+        },
+        {
+          "label": "透明玻璃",
+          "text": "clear glass",
+          "keywords": "透明玻璃 clear glass",
+          "translation": "透明玻璃"
+        },
+        {
+          "label": "白色大理石",
+          "text": "white marble",
+          "keywords": "白色大理石 white marble",
+          "translation": "白色大理石"
+        },
+        {
+          "label": "风化石材",
+          "text": "weathered stone",
+          "keywords": "风化石材 weathered stone",
+          "translation": "风化石材"
+        },
+        {
+          "label": "粗糙木材",
+          "text": "rough wood",
+          "keywords": "粗糙木材 rough wood",
+          "translation": "粗糙木材"
+        },
+        {
+          "label": "釉面陶瓷",
+          "text": "glazed ceramic",
+          "keywords": "釉面陶瓷 glazed ceramic",
+          "translation": "釉面陶瓷"
+        },
+        {
+          "label": "湿润路面",
+          "text": "wet pavement",
+          "keywords": "湿润路面 wet pavement",
+          "translation": "湿润路面"
+        },
+        {
+          "label": "珠光表面",
+          "text": "pearlescent surface",
+          "keywords": "珠光表面 pearlescent surface",
+          "translation": "珠光表面"
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "label": "月光银发人像",
+      "category": "subject",
+      "text": "An adult woman with long silver hair stands beside a stone balcony in a white gown. Moonlight outlines her hair while distant city lights blur behind her.",
+      "note": "SDXL 人像起点；Anima 请保留插画描述，写实能力有限。",
+      "translation": "一位留着银色长发的成年女性身穿白色礼裙，站在石制阳台旁。月光勾勒出她头发的轮廓，远处的城市灯光在她身后化为模糊的光斑。"
+    },
+    {
+      "label": "白裙龙娘",
+      "category": "fantasy",
+      "text": "An adult dragon woman with silver hair, curved horns, and a long tail walks through a moonlit palace garden. She wears a white gown and white high heels, carrying herself with a proud expression.",
+      "note": "动漫与 Anima 插画起点；龙角、尾巴和鞋子可按构图删减。",
+      "translation": "一位留着银发、长着弯曲龙角和长尾巴的成年龙娘走过月光下的宫殿花园。她穿着白色礼裙和白色高跟鞋，神情高傲，举止自信。"
+    },
+    {
+      "label": "窗边阅读",
+      "category": "interior",
+      "text": "An adult librarian in a knitted sweater reads a weathered book beside a tall window. Soft afternoon light falls across wooden shelves and a ceramic cup in this warm digital illustration.",
+      "note": "自然语言模型、SDXL、Anima 可尝试；先保持主体与光线关系明确。",
+      "translation": "一位穿着针织毛衣的成年图书管理员坐在高窗旁，阅读一本磨旧的书。在这幅温暖的数字插画中，柔和的午后光线洒在木制书架和陶瓷杯上。"
+    },
+    {
+      "label": "雨夜撑伞",
+      "category": "action",
+      "text": "An adult traveler holds a transparent umbrella on a quiet city street at night. Neon reflections stretch across wet pavement, and raindrops catch the side lighting in an anime illustration.",
+      "note": "动漫与 Anima 可用；SDXL 亦可尝试，反射与雨滴细节不保证。",
+      "translation": "一位成年旅行者撑着透明雨伞，站在夜晚安静的城市街道上。在这幅动漫插画中，霓虹灯的倒影延伸在湿润路面上，雨滴映着侧面的光线。"
+    },
+    {
+      "label": "夏日花园茶会",
+      "category": "landscape",
+      "text": "Two adults share tea at a small table in a summer garden. Climbing roses frame the scene, sunlight filters through the leaves, and their relaxed poses suggest an unhurried conversation.",
+      "note": "自然语言模板；多人物可能串色，必要时分别描述外观或使用区域控制。",
+      "translation": "两位成年人在夏日花园的小桌旁一起喝茶。攀援的玫瑰环绕着画面，阳光透过叶片洒落，他们放松的姿态让人感到这场交谈悠闲而从容。"
+    },
+    {
+      "label": "山巅旅行者",
+      "category": "subject",
+      "text": "An adult explorer in a windproof coat stands on a rocky ridge above a river valley. A wide view shows layered mountains under pale dawn light and a thin ribbon of mist.",
+      "note": "SDXL 风景人像或插画模型起点；广角构图下人物细节可能减少。",
+      "translation": "一位身穿防风外套的成年探险家站在河谷上方的岩石山脊上。宽阔的视野展现出淡淡晨光中的层叠山峦，以及一缕细长的薄雾。"
+    },
+    {
+      "label": "林间小狐狸",
+      "category": "nature",
+      "text": "A red fox pauses on a mossy forest path with one paw lifted. Ferns and tiny mushrooms surround the roots, while scattered sunlight creates warm patches on its fur.",
+      "note": "SDXL 动物摄影或 Anima 动物插画均可尝试；风格由当前模型决定。",
+      "translation": "一只红狐狸停在长满苔藓的森林小径上，抬起一只爪子。蕨类植物和小蘑菇围绕着树根，零星洒落的阳光在它的毛发上形成温暖的光斑。"
+    },
+    {
+      "label": "海边灯塔",
+      "category": "architecture",
+      "text": "A solitary lighthouse rises above coastal cliffs at sunset. Waves break against dark rocks below, and warm light from a small window contrasts with the cool blue sea.",
+      "note": "SDXL、自然语言模型风景起点；可追加媒介词决定照片或绘画风格。",
+      "translation": "日落时分，一座孤独的灯塔耸立在海岸悬崖上。海浪拍打着下方的深色岩石，小窗中透出的暖光与冷蓝色的海面形成对照。"
+    },
+    {
+      "label": "竹林武者",
+      "category": "outfit",
+      "text": "An adult swordsman in a layered robe stands quietly in a bamboo grove. A sheathed sword rests at his side, and drifting leaves cross the foreground of a restrained ink illustration.",
+      "note": "动漫与 Anima 插画起点；不需要质量词，墨线效果依赖训练风格。",
+      "translation": "一位身穿多层长袍的成年剑士静静站在竹林中。一把收入鞘中的剑垂在他身侧，飘落的叶片掠过这幅含蓄墨水插画的前景。"
+    },
+    {
+      "label": "太空站温室",
+      "category": "fantasy",
+      "text": "An adult botanist tends to leafy plants inside a greenhouse on a space station. Beyond the curved windows, a blue planet fills the darkness while practical white lights illuminate the workbench.",
+      "note": "SDXL 科幻插画、Anima 或自然语言模型；复杂空间关系可能需要简化。",
+      "translation": "一位成年植物学家在空间站的温室里照料枝叶茂盛的植物。弧形窗户外，一颗蓝色星球映现在黑暗中，工作用的白色灯光照亮了工作台。"
+    },
+    {
+      "label": "复古咖啡馆",
+      "category": "interior",
+      "text": "A quiet cafe interior contains round wooden tables, brass lamps, and a rain-streaked window. A folded newspaper lies beside a steaming cup, with no people in the scene.",
+      "note": "室内静物自然语言模板；SDXL 可尝试写实，Anima 更适合绘画。",
+      "translation": "一间安静的咖啡馆里摆着圆形木桌和黄铜灯，窗玻璃上留着雨水的痕迹。一份折好的报纸放在冒着热气的杯子旁，整个场景中没有人物。"
+    },
+    {
+      "label": "雪中车站",
+      "category": "architecture",
+      "text": "An old train station waits beneath slowly falling snow at blue hour. Warm lamps illuminate the empty platform, and a red train rests under the iron canopy in a watercolor painting.",
+      "note": "SDXL 或 Anima 插画起点；水彩与建筑结构细节可能互相影响。",
+      "translation": "蓝色时刻，缓缓飘落的雪花笼罩着一座老火车站。在这幅水彩画中，温暖的灯光照亮空旷的站台，一列红色火车停在铁制雨棚下。"
+    },
+    {
+      "label": "春日骑行",
+      "category": "action",
+      "text": "An adult cyclist rides a simple city bicycle along a riverside path lined with cherry blossoms. A side view captures the relaxed movement, with petals drifting toward the bright water.",
+      "note": "动漫、Anima、SDXL 均可尝试；自行车结构是较难内容，可简化或局部修正。",
+      "translation": "一位成年骑行者骑着一辆简洁的城市自行车，沿着樱花盛开的河滨小径前行。侧面视角呈现出轻松的骑行姿态，花瓣向明亮的水面飘去。"
+    },
+    {
+      "label": "古堡书房",
+      "category": "interior",
+      "text": "An adult scholar writes in an open notebook inside a stone castle study. Candlelight warms the wooden desk, while a tall arched window reveals a distant storm over the mountains.",
+      "note": "适合 Anima 奇幻插画或 SDXL；手部与文字内容需要单独核对。",
+      "translation": "一位成年学者在石砌古堡的书房里，往摊开的笔记本上写字。烛光为木桌染上暖意，高大的拱窗外可见远处山间的风暴。"
+    },
+    {
+      "label": "舞台小提琴家",
+      "category": "action",
+      "text": "An adult violinist in a dark formal suit performs on a small theater stage. A single overhead spotlight separates the musician from the dim seats, and the bow forms a strong diagonal.",
+      "note": "SDXL、动漫与 Anima 起点；乐器握持和手指位置不保证准确。",
+      "translation": "一位身穿深色正装的成年小提琴手在小剧院的舞台上演奏。一束头顶的聚光灯让音乐家从昏暗的座席背景中显现出来，琴弓形成一条鲜明的对角线。"
+    },
+    {
+      "label": "山村清晨",
+      "category": "landscape",
+      "text": "A mountain village sits between terraced fields and a winding river at dawn. Thin cooking smoke rises from tiled roofs, and distant peaks fade into a soft wash of blue mist.",
+      "note": "自然语言风景模板；Anima 可尝试插画，SDXL 可另加摄影或绘画媒介。",
+      "translation": "黎明时，一座山村坐落在梯田与蜿蜒河流之间。细细的炊烟从瓦屋顶升起，远处的山峰隐入一片柔和的蓝色薄雾中。"
+    },
+    {
+      "label": "陶瓷茶具静物",
+      "category": "objects",
+      "text": "A ceramic teapot and two small cups sit on a linen cloth beside a sprig of lavender. Diffused window light reveals the glaze and gentle shadows in a close still life photograph.",
+      "note": "SDXL 静物摄影起点；Anima 请将 photograph 改为 illustration。",
+      "translation": "一把陶瓷茶壶和两个小杯子放在亚麻布上，旁边摆着一枝薰衣草。在这幅近距离静物照片中，漫射的窗光呈现出陶器的釉面和柔和的阴影。"
+    },
+    {
+      "label": "秋日肖像",
+      "category": "composition",
+      "text": "An adult man with round glasses and a wool scarf stands in an autumn park. The bust portrait places his face off center, with golden leaves and softly blurred branches behind him.",
+      "note": "SDXL 人像起点；Anima 可将 portrait 补充为 illustrated portrait。",
+      "translation": "一位戴着圆框眼镜、围着羊毛围巾的成年男性站在秋天的公园里。这幅胸像人像将他的脸安排在偏离画面中心的位置，身后是金黄色落叶与柔和虚化的树枝。"
+    },
+    {
+      "label": "浮岛探险",
+      "category": "fantasy",
+      "text": "An adult traveler with a backpack crosses a narrow stone bridge between floating islands. Small waterfalls disappear into the clouds below, and a distant airship catches the light of the rising sun.",
+      "note": "动漫与 Anima 奇幻场景；桥梁和浮岛空间关系可能需要迭代。",
+      "translation": "一位背着背包的成年旅行者走过漂浮岛屿之间的狭窄石桥。小瀑布消失在下方的云海中，远处的一艘飞艇映着初升太阳的光芒。"
+    },
+    {
+      "label": "玻璃温室",
+      "category": "architecture",
+      "text": "A Victorian greenhouse glows among dense garden foliage after gentle rain. Its clear glass panels reflect the pale sky, and a winding path leads toward the open door in a detailed watercolor.",
+      "note": "SDXL 或 Anima 建筑插画起点；detailed 是内容描述，不代表固定质量增益。",
+      "translation": "雨后，维多利亚式温室在茂密的花园枝叶间泛着光。在这幅细致的水彩画中，透明玻璃板反射着淡色天空，一条蜿蜒小径通向敞开的门。"
+    },
+    {
+      "label": "极光露营",
+      "category": "weather_time",
+      "text": "A small orange tent stands beside a frozen lake beneath the aurora borealis. Snowy peaks frame the horizon, and the green light reflects faintly on the dark ice in a wide landscape photograph.",
+      "note": "SDXL 夜景摄影起点；Anima 宜改为 landscape illustration。",
+      "translation": "极光之下，一顶橙色小帐篷立在冰封的湖畔。在这幅宽幅风景照片中，积雪山峰环绕着地平线，绿色极光在深色冰面上留下微弱的倒影。"
+    },
+    {
+      "label": "厨房烘焙",
+      "category": "action",
+      "text": "An adult baker wearing an apron shapes bread dough on a flour-dusted wooden counter. Morning light enters the sunlit kitchen, illuminating a bowl of apples and a tray of finished pastries.",
+      "note": "自然语言日常场景；SDXL 与 Anima 可尝试，手部活动可能需要简化。",
+      "translation": "一位系着围裙的成年面包师在撒着面粉的木质台面上揉塑面团。晨光照进明亮的厨房，照亮了一碗苹果和一盘已经烤好的糕点。"
+    },
+    {
+      "label": "机器人花店",
+      "category": "fantasy",
+      "text": "A small robot companion arranges sunflowers outside a cozy flower shop. The rounded metal body reflects warm afternoon light, while colorful pots line the pavement in a friendly anime illustration.",
+      "note": "动漫与 Anima 插画起点；机器人外形描述可按已有模型偏好调整。",
+      "translation": "一个小巧的机器人伙伴在温馨的花店外整理向日葵。在这幅亲切的动漫插画中，圆润的金属机身映着温暖的午后光线，彩色花盆沿人行道排开。"
+    },
+    {
+      "label": "沙漠遗迹",
+      "category": "landscape",
+      "text": "Weathered stone columns emerge from desert dunes beneath a clear midday sky. A lone adult explorer provides a sense of scale, and long footprints lead from the foreground toward the ruins.",
+      "note": "SDXL 场景或 Anima 插画；强光与沙纹是描述目标，并非渲染参数。",
+      "translation": "晴朗的正午天空下，风化的石柱从沙漠沙丘中显露出来。一位独行的成年探险家为画面提供了尺度参照，一串长长的脚印从前景延伸至遗迹。"
+    },
+    {
+      "label": "雨后锦鲤池",
+      "category": "nature",
+      "text": "Several koi fish swim beneath floating leaves in a clear garden pond after rain. A top-down view emphasizes circular ripples, smooth stones, and reflections of nearby bamboo in a gouache painting.",
+      "note": "SDXL、Anima 与自然语言模型可尝试；水面反射可能遮挡主体。",
+      "translation": "雨后，几条锦鲤在清澈的花园池塘中、漂浮的叶片下游动。在这幅水粉画中，俯视视角突出了环形涟漪、光滑的石头以及附近竹子的倒影。"
+    },
+    {
+      "label": "等距屋顶花园",
+      "category": "style",
+      "text": "An isometric illustration shows a compact rooftop garden with raised beds, a wooden bench, and a small greenhouse. Potted herbs line the walkway, with a limited palette of green, cream, and terracotta.",
+      "note": "适合插画、Anima 与 SDXL；等距投影效果取决于模型，不能代替精确建筑制图。",
+      "translation": "一幅等距插画展现出紧凑的屋顶花园，园中有高架种植床、木长凳和小温室。盆栽香草沿着步道排列，画面采用绿色、奶油色和陶土色组成的有限色板。"
+    },
+    {
+      "label": "太空机械师",
+      "category": "subject",
+      "text": "An adult mechanic with short blue hair repairs a compact robot at a workbench aboard a spaceship. Practical tools hang on the wall, and cool overhead lights contrast with a warm desk lamp.",
+      "note": "Anima 与动漫科幻插画；短发、工具、灯光可择要保留，避免提示过载。",
+      "translation": "一位留着蓝色短发的成年机械师在宇宙飞船的工作台前修理小型机器人。实用工具挂在墙上，冷色顶灯与温暖的台灯形成对照。"
+    },
+    {
+      "label": "纸雕森林",
+      "category": "medium",
+      "text": "A layered paper cut artwork depicts a deer standing among stylized pine trees. Curved sheets form distant hills, and soft side lighting reveals the depth and shadows between the paper layers.",
+      "note": "自然语言模型或 SDXL 材质实验；Anima 可尝试，纸层结构不保证真实。",
+      "translation": "一件多层剪纸作品描绘了一只站在风格化松树之间的鹿。弯曲的纸片组成远处的山丘，柔和的侧光显露出各层纸张之间的深度和阴影。"
+    },
+    {
+      "label": "黑白城市速写",
+      "category": "medium",
+      "text": "An ink drawing captures a quiet old town street with bicycles leaning against stone walls. Loose crosshatching defines the shadows, while a single adult pedestrian walks toward an archway in the distance.",
+      "note": "适合 Anima 与插画模型；不叠加彩色词，避免与黑白媒介目标冲突。",
+      "translation": "一幅墨水画描绘了安静的老城街道，自行车倚靠在石墙上。疏松的交叉排线刻画出阴影，远处一位独行的成年行人正朝拱门走去。"
+    },
+    {
+      "label": "海边双人合影",
+      "category": "composition",
+      "text": "Two adults in casual linen clothing stand beside a seaside railing during golden hour. One has short brown hair and a blue shirt, while the other has long black hair and a cream jacket.",
+      "note": "自然语言双人模板；明确各人物衣着可缓解特征混淆，仍可能需要区域提示。",
+      "translation": "黄金时刻，两位身穿休闲亚麻服装的成年人站在海边栏杆旁。其中一位留着棕色短发、穿着蓝衬衫，另一位留着黑色长发、穿着奶油色夹克。"
+    }
+  ]
+}

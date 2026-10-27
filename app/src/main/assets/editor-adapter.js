@@ -68,6 +68,35 @@
     events.push({ type, data });
     if (events.length > 50) events.shift();
   }
+  let lastEditToken='',lastEditAt=0,lastInteractionAt=0;
+  function textFieldFor(element) {
+    const current=app()?.graph;
+    if(!element || !current || !Array.isArray(current._nodes))return null;
+    for(const node of current._nodes) for(let index=0;index<(node.widgets||[]).length;index++) {
+      const widget=node.widgets[index];
+      if(typeof widget.value!=='string' || widget.type==='combo')continue;
+      const options=typeof widget.options?.values==='function'?widget.options.values():widget.options?.values;
+      if(Array.isArray(options))continue;
+      const root=widget.element;
+      if(root && (root===element || root.contains?.(element)))
+        return {nodeTitle:node.title||node.type,nodeType:node.type,name:widget.name||`字段 ${index+1}`,value:widget.value,target:bind(node,widget,index)};
+    }
+    return null;
+  }
+  function requestNativeEditor(event) {
+    if(event.type==='focusin' && Date.now()-lastInteractionAt>1500)return;
+    const editable=event.target?.closest?.('textarea,input[type="text"],input:not([type]),[contenteditable="true"]');
+    const field=textFieldFor(editable);if(!field)return;
+    if(event.type!=='focusin') {event.preventDefault?.();event.stopImmediatePropagation?.();}
+    const now=Date.now();
+    if(field.target.token!==lastEditToken || now-lastEditAt>700) {
+      push('edit_field',field);lastEditToken=field.target.token;lastEditAt=now;
+    }
+    if(event.type==='focusin')editable.blur?.();
+  }
+  document.addEventListener('pointerdown',event=>{lastInteractionAt=Date.now();requestNativeEditor(event);},true);
+  document.addEventListener('keydown',event=>{if(!event.isComposing && (event.key==='Tab'||event.key==='Enter'))lastInteractionAt=Date.now();},true);
+  document.addEventListener('focusin',requestNativeEditor,true);
   function hook() {
     const api = window.comfyAPI?.api?.api;
     if (!api || api === hookedApi) return;

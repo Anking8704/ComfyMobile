@@ -10,13 +10,14 @@ function fixture() {
   const graph = { _nodes: [node], getNodeById(id) { return this._nodes.find(n => String(n.id) === String(id)); }, serialize() { return { nodes: this._nodes.map(n=>({id:n.id,type:n.type,widgets_values:n.widgets.map(w=>w.value)})) }; }, setDirtyCanvas() {}, configure(data) { this._nodes = data.nodes.map(n=>({...node,id:n.id,widgets:[{...widget,value:n.widgets_values[0]}]})); } };
   const listeners = new Map();
   const app = { graph, canvas: { selected_nodes: {}, setDirty() {}, selectNode() {}, ds:{scale:1,offset:[0,0]} }, queuePrompt: async()=>{listeners.get('promptQueueing')?.({detail:{requestId:1}});listeners.get('promptQueued')?.({detail:{requestId:1,batchCount:1}});return true;}, loadGraphData: async(data)=>{graph.configure(data);return true;} };
-  const document = { createElement() { return {}; }, head:{appendChild(){}}, querySelector(){return null;} };
+  const domListeners=new Map();
+  const document = { addEventListener(name,cb){domListeners.set(name,cb);}, createElement() { return {}; }, head:{appendChild(){}}, querySelector(){return null;} };
   const ctx = vm.createContext({ console, setTimeout, clearTimeout, document, Event, URL, Blob, TextDecoder });
   ctx.window = ctx;
   ctx.comfyAPI = { app:{app}, api:{api:{addEventListener(name,cb){listeners.set(name,cb);}}} };
   ctx.LiteGraph = {registered_node_types:{ThirdPartyText:{}},createNode(){return {...node};}};
   vm.runInContext(source, ctx);
-  return { bridge:ctx.ComfyMobileEditor, app, graph, widget, node, listeners };
+  return { bridge:ctx.ComfyMobileEditor, app, graph, widget, node, listeners, domListeners };
 }
 
 test('custom string widgets are editable and numeric widgets are not prompt fields', async()=>{
@@ -104,4 +105,30 @@ test('status and progress events are drained once',async()=>{
   const f=fixture(); f.listeners.get('progress')({detail:{value:7,max:28}});
   const result=await f.bridge.drainEvents(); assert.equal(result.events[0].type,'progress');
   assert.equal(result.events[0].data.value,7); assert.equal((await f.bridge.drainEvents()).events.length,0);
+});
+test('pointer on an actual text widget requests native editing before the web IME opens',async()=>{
+  const f=fixture();let prevented=false,stopped=false;
+  const input={closest(){return this;},blur(){}};f.widget.element={contains(el){return el===input;}};
+  f.domListeners.get('pointerdown')?.({target:input,preventDefault(){prevented=true;},stopImmediatePropagation(){stopped=true;}});
+  const event=(await f.bridge.drainEvents()).events.find(e=>e.type==='edit_field');
+  assert.ok(event);assert.equal(event.data.name,'text');assert.equal(event.data.value,'原始提示词');assert.equal(event.data.target.nodeId,6);
+  assert.equal(prevented,true);assert.equal(stopped,true);
+});
+test('search inputs and string dropdowns never trigger prompt-page navigation',async()=>{
+  const f=fixture();const input={closest(){return this;}};
+  f.domListeners.get('pointerdown')?.({target:input,preventDefault(){throw Error('search intercepted');}});
+  f.widget.type='combo';f.widget.options={values:['a','b']};f.widget.element=input;
+  f.domListeners.get('pointerdown')?.({target:input,preventDefault(){throw Error('combo intercepted');}});
+  assert.equal((await f.bridge.drainEvents()).events.length,0);
+});
+test('focus fallback deduplicates a pointer handoff for the same field',async()=>{
+  const f=fixture();const input={closest(){return this;},blur(){}};f.widget.element=input;
+  f.domListeners.get('pointerdown')?.({target:input,preventDefault(){},stopImmediatePropagation(){}});
+  f.domListeners.get('focusin')?.({target:input});
+  assert.equal((await f.bridge.drainEvents()).events.filter(e=>e.type==='edit_field').length,1);
+});
+test('frontend initialization focusing a widget does not open the native prompt page',async()=>{
+  const f=fixture();const input={closest(){return this;},blur(){throw Error('boot focus should not be intercepted');}};f.widget.element=input;
+  f.domListeners.get('focusin')?.({type:'focusin',target:input});
+  assert.equal((await f.bridge.drainEvents()).events.length,0);
 });
