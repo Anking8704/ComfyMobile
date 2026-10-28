@@ -1,0 +1,9 @@
+# server	local	lastSynced	expected   (items separated by |, empty column = empty list)
+a|b	a|b	a|b	a|b
+a|b|c	a|b	a|b	a|b|c
+a	a|n	a	n|a
+a|b	a	a|b	a
+a	a|b	a|b	a
+	x		x
+a|b	b|a	a|b	a|b
+x|y			x|y

@@ -10,14 +10,20 @@ function fixture() {
   const graph = { _nodes: [node], getNodeById(id) { return this._nodes.find(n => String(n.id) === String(id)); }, serialize() { return { nodes: this._nodes.map(n=>({id:n.id,type:n.type,widgets_values:n.widgets.map(w=>w.value)})) }; }, setDirtyCanvas() {}, configure(data) { this._nodes = data.nodes.map(n=>({...node,id:n.id,widgets:[{...widget,value:n.widgets_values[0]}]})); } };
   const listeners = new Map();
   const app = { graph, canvas: { selected_nodes: {}, setDirty() {}, selectNode() {}, ds:{scale:1,offset:[0,0]} }, queuePrompt: async()=>{listeners.get('promptQueueing')?.({detail:{requestId:1}});listeners.get('promptQueued')?.({detail:{requestId:1,batchCount:1}});return true;}, loadGraphData: async(data)=>{graph.configure(data);return true;} };
+  const tracker = { checks: 0, checkState() { this.checks++; } };
+  app.extensionManager = { workflow: { activeWorkflow: { changeTracker: tracker } } };
   const domListeners=new Map();
-  const document = { addEventListener(name,cb){domListeners.set(name,cb);}, createElement() { return {}; }, head:{appendChild(){}}, querySelector(){return null;} };
-  const ctx = vm.createContext({ console, setTimeout, clearTimeout, document, Event, URL, Blob, TextDecoder });
+  const document = { addEventListener(name,cb){domListeners.set(name,cb);}, createElement() { return {}; }, head:{appendChild(){}}, querySelector(){return null;}, getElementById(){return null;} };
+  class FileReader { readAsDataURL(blob){ blob.arrayBuffer().then(b=>{this.result='data:'+(blob.type||'application/octet-stream')+';base64,'+Buffer.from(b).toString('base64');this.onload?.();}); } }
+  const ctx = vm.createContext({ console, setTimeout, clearTimeout, document, Event, URL, Blob, TextDecoder, FileReader });
   ctx.window = ctx;
-  ctx.comfyAPI = { app:{app}, api:{api:{addEventListener(name,cb){listeners.set(name,cb);}}} };
+  const posted = [];
+  const apiObject = { addEventListener(name,cb){listeners.set(name,cb);}, clientId:'phone', posted,
+    responses: {}, async fetchApi(path, init) { if(init?.method==='POST'){posted.push({path,body:JSON.parse(init.body)});return {ok:true,json:async()=>({prompt_id:'new-id'})};} const r=this.responses[path]; return {ok:!!r,status:r?200:404,json:async()=>r}; } };
+  ctx.comfyAPI = { app:{app}, api:{api:apiObject} };
   ctx.LiteGraph = {registered_node_types:{ThirdPartyText:{}},createNode(){return {...node};}};
   vm.runInContext(source, ctx);
-  return { bridge:ctx.ComfyMobileEditor, app, graph, widget, node, listeners, domListeners };
+  return { bridge:ctx.ComfyMobileEditor, app, graph, widget, node, listeners, domListeners, tracker, api:apiObject, ctx };
 }
 
 test('custom string widgets are editable and numeric widgets are not prompt fields', async()=>{
@@ -101,10 +107,23 @@ test('workflow load sequence invalidates targets even when node objects are reta
   const f=fixture();f.app.graphLoadSequence=1;const target=(await f.bridge.fields()).fields[0].target;
   f.app.graphLoadSequence=2;assert.equal((await f.bridge.writeField(target,'wrong')).ok,false);
 });
-test('status and progress events are drained once',async()=>{
-  const f=fixture(); f.listeners.get('progress')({detail:{value:7,max:28}});
-  const result=await f.bridge.drainEvents(); assert.equal(result.events[0].type,'progress');
-  assert.equal(result.events[0].data.value,7); assert.equal((await f.bridge.drainEvents()).events.length,0);
+test('progress and queue status are kept as state instead of flooding the event queue',async()=>{
+  const f=fixture();
+  for(let i=0;i<200;i++)f.listeners.get('status')({detail:{exec_info:{queue_remaining:2}}});
+  f.listeners.get('progress')({detail:{value:7,max:28,prompt_id:'p'}});
+  f.listeners.get('execution_success')({detail:{prompt_id:'p'}});
+  f.listeners.get('progress')({detail:{value:1,max:28,prompt_id:'q'}});
+  const result=await f.bridge.drainEvents();
+  assert.deepEqual([...result.events.map(e=>e.type)],['execution_success']);
+  assert.equal(result.state.queueRemaining,2);assert.equal(result.state.progress.value,1);
+  assert.equal((await f.bridge.drainEvents()).events.length,0);
+});
+test('sampler previews are fetched on demand and only when a newer one exists',async()=>{
+  const f=fixture();assert.equal((await f.bridge.preview(0)).seq,0);
+  f.listeners.get('b_preview')({detail:new Blob([new Uint8Array([1,2,3])],{type:'image/jpeg'})});
+  const state=(await f.bridge.drainEvents()).state;assert.equal(state.previewSeq,1);
+  const first=await f.bridge.preview(0);assert.equal(first.seq,1);assert.match(first.dataUrl,/^data:image\/jpeg;base64,/);
+  assert.equal((await f.bridge.preview(1)).same,true);
 });
 function field(f){const input={closest(){return this;},setAttribute(k,v){this[k]=v;},blur(){this.blurred=true;}};f.widget.element=input;return input;}
 function tapAt(f,target,x=10,y=10,id=1,moveTo){
@@ -197,4 +216,90 @@ test('a canvas-drawn single-line text widget is claimed so the web prompt never 
   f.domListeners.get('pointerup')({pointerId:1,clientX:50,clientY:50,target:surface});
   assert.equal(blocked,true);assert.equal((await edits(f)).length,0);
   tapAt(f,surface,50,50);const found=await edits(f);assert.equal(found.length,1);assert.equal(found[0].data.name,'text');
+});
+function linkedFixture(){
+  const f=fixture();
+  const sampler={id:9,type:'KSampler',title:'K采样器',widgets:[{name:'seed',type:'number',value:5,options:{min:0,max:100,step2:1,precision:0}},{name:'cfg',type:'number',value:7,options:{min:0,max:30,step2:0.1,precision:1}}],
+    inputs:[{name:'positive',link:1},{name:'negative',link:2}],outputs:[],pos:[300,0],setDirtyCanvas(){}};
+  const negative={id:7,type:'CLIPTextEncode',title:'负面',widgets:[{name:'text',type:'customtext',value:'blurry'}],inputs:[],outputs:[{links:[2]}],pos:[0,200],setDirtyCanvas(){}};
+  f.node.outputs=[{links:[1]}];f.graph._nodes.push(sampler,negative);
+  f.graph.links=new Map([[1,{target_id:9,target_slot:0}],[2,{target_id:9,target_slot:1}]]);
+  return {f,sampler,negative};
+}
+test('prompt fields report whether they feed the positive or negative sampler input',async()=>{
+  const {f}=linkedFixture();const fields=(await f.bridge.fields()).fields;
+  assert.equal(fields.find(x=>x.target.nodeId===6).role,'positive');assert.equal(fields.find(x=>x.target.nodeId===7).role,'negative');
+});
+test('programmatic edits are recorded so the frontend undo restores exactly them',async()=>{
+  const {f}=linkedFixture();const before=f.tracker.checks;
+  f.graph.remove=function(n){this._nodes=this._nodes.filter(x=>x!==n);};
+  await f.bridge.command('remove',{nodeId:7});
+  await f.bridge.writeField((await f.bridge.fields()).fields[0].target,'new text');
+  assert.equal(f.tracker.checks,before+2);
+});
+test('numeric parameters are validated against the node limits',async()=>{
+  const {f}=linkedFixture();const fields=(await f.bridge.command('nodes',{})).fields;
+  const seed=fields.find(x=>x.name==='seed'&&x.target.nodeId===9),cfg=fields.find(x=>x.name==='cfg');
+  assert.equal(seed.number.precision,0);assert.equal(seed.number.max,100);
+  assert.equal((await f.bridge.command('widget',{target:seed.target,value:7.5})).ok,false);
+  assert.equal((await f.bridge.command('widget',{target:seed.target,value:101})).ok,false);
+  assert.equal((await f.bridge.command('widget',{target:cfg.target,value:6.5})).ok,true);
+});
+test('a text field driven by a link is not offered as an editable prompt field',async()=>{
+  const f=fixture();f.node.inputs=[{name:'text',link:3,widget:{name:'text'}}];
+  assert.equal((await f.bridge.fields()).fields.length,0);
+  assert.equal((await f.bridge.command('nodes',{})).fields.find(x=>x.name==='text').linked,true);
+});
+test('bypass and mute toggle node state and are recorded',async()=>{
+  const f=fixture();f.node.mode=0;
+  assert.equal((await f.bridge.command('mode',{nodeId:6,mode:'bypass'})).mode,'bypass');assert.equal(f.node.mode,4);
+  assert.equal((await f.bridge.command('mode',{nodeId:6,mode:'bypass'})).mode,'normal');assert.equal(f.tracker.checks,2);
+});
+function subgraphFixture(){
+  const f=fixture();
+  const innerWidget={name:'text',type:'customtext',value:'inside'};
+  const inner={id:1,type:'CLIPTextEncode',title:'内部提示词',widgets:[innerWidget],inputs:[],outputs:[],pos:[0,0],setDirtyCanvas(){}};
+  const sub={id:'sg-1',name:'人物子图',_nodes:[inner],getNodeById(id){return this._nodes.find(n=>String(n.id)===String(id));},setDirtyCanvas(){}};
+  f.graph.subgraphs=new Map([['sg-1',sub]]);
+  return {f,sub,inner,innerWidget};
+}
+test('prompt fields inside subgraphs are listed, labelled and written to the right graph',async()=>{
+  const {f,innerWidget}=subgraphFixture();const fields=(await f.bridge.fields()).fields;
+  const inside=fields.find(x=>x.target.graphId==='sg-1');assert.equal(inside.nodeTitle,'人物子图 › 内部提示词');
+  assert.equal((await f.bridge.writeField(inside.target,'edited')).ok,true);assert.equal(innerWidget.value,'edited');
+  assert.equal(f.widget.value,'原始提示词');
+});
+test('a subgraph removed from the workflow invalidates its fields',async()=>{
+  const {f}=subgraphFixture();const inside=(await f.bridge.fields()).fields.find(x=>x.target.graphId==='sg-1');
+  f.graph.subgraphs.clear();assert.equal((await f.bridge.writeField(inside.target,'lost')).ok,false);
+});
+test('while a subgraph is open, taps and the node list use the graph on screen',async()=>{
+  const {f,sub,innerWidget}=subgraphFixture();f.app.canvas.graph=sub;
+  const input={closest(){return this;},setAttribute(){}};innerWidget.element=input;
+  tapAt(f,input);tapAt(f,input);const found=await edits(f);
+  assert.equal(found.length,1);assert.equal(found[0].data.target.graphId,'sg-1');
+  assert.deepEqual([...(await f.bridge.command('nodes',{})).nodes.map(n=>n.id)],[1]);
+});
+test('Nodes 2.0 text boxes map to their widget through the input slot key',async()=>{
+  const f=fixture();f.node.inputs=[{name:'clip'},{name:'text',widget:{name:'text'}}];
+  const nodeEl={getAttribute:k=>k==='data-node-id'?'6':null};
+  const holder={closest:sel=>sel==='[data-node-id]'?nodeEl:null,querySelector:sel=>sel==='[data-slot-key]'?{getAttribute:()=>'6-in-1'}:null};
+  const area={closest:sel=>sel==='[data-testid="node-widget"]'?holder:sel.startsWith('textarea')?area:null,setAttribute(){}};
+  tapAt(f,area);tapAt(f,area);const found=await edits(f);
+  assert.equal(found.length,1);assert.equal(found[0].data.name,'text');
+});
+test('simple mode detects key controls, and a saved selection is stored in the workflow App-mode data',async()=>{
+  const {f}=linkedFixture();f.graph.extra={};
+  const auto=await f.bridge.command('simple',{});assert.equal(auto.source,'auto');
+  assert.deepEqual([...auto.fields.slice(0,2).map(x=>x.role)],['positive','negative']);
+  assert.ok(auto.fields.some(x=>x.name==='seed'));
+  const saved=await f.bridge.command('setSimple',{entries:[{nodeId:9,name:'cfg'},{nodeId:6,name:'text'}]});
+  assert.equal(saved.source,'workflow');assert.deepEqual([...saved.fields.map(x=>x.name)],['cfg','text']);
+  assert.equal(JSON.stringify(f.graph.extra.linearData.inputs),JSON.stringify([[9,'cfg'],[6,'text']]));
+});
+test('re-running a past task submits its prompt with fresh seeds',async()=>{
+  const f=fixture();f.api.responses['/jobs/abc']={workflow:{prompt:{'3':{class_type:'KSampler',inputs:{seed:1,steps:20}}},extra_data:{extra_pnginfo:{}}}};
+  const r=await f.bridge.command('loadJob',{id:'abc',mode:'rerun'});
+  assert.equal(r.ok,true);const sent=f.api.posted[0];assert.equal(sent.path,'/prompt');
+  assert.notEqual(sent.body.prompt['3'].inputs.seed,1);assert.equal(sent.body.prompt['3'].inputs.steps,20);assert.equal(sent.body.client_id,'phone');
 });

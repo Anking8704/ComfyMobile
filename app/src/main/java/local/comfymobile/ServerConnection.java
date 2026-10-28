@@ -25,6 +25,21 @@ public final class ServerConnection {
             return c;
         }throw new IOException("服务器跳转次数过多");
     }
+    /** POSTs a body to the same server; redirects are refused rather than followed with the body. */
+    public byte[] post(String path,String contentType,byte[] body,int max,String cookie)throws IOException{
+        URL url=server.resolve(path).toURL();
+        HttpURLConnection c=(HttpURLConnection)url.openConnection();
+        try{
+            c.setConnectTimeout(8000);c.setReadTimeout(60000);c.setInstanceFollowRedirects(false);
+            c.setRequestMethod("POST");c.setDoOutput(true);c.setFixedLengthStreamingMode(body.length);
+            c.setRequestProperty("Content-Type",contentType);c.setRequestProperty("Accept","application/json,*/*;q=0.8");
+            if(cookie!=null)c.setRequestProperty("Cookie",cookie);
+            try(OutputStream out=c.getOutputStream()){out.write(body);}
+            int status=c.getResponseCode();
+            if(status<200||status>=300)throw new IOException("服务器返回 HTTP "+status);
+            try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){copy(in,out,max);return out.toByteArray();}
+        }finally{c.disconnect();}
+    }
     public byte[] bytes(String path,int max,String cookie)throws IOException{
         HttpURLConnection c=open(path,cookie);
         try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){

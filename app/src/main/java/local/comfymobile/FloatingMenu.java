@@ -7,7 +7,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.Button;
+import android.graphics.Bitmap;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -25,7 +27,9 @@ final class FloatingMenu {
     private final SharedPreferences prefs;
     private final Button handle;
     private final LinearLayout sheet,grid;
-    private final TextView status,progress;
+    private final TextView status,progress,title;
+    private final LinearLayout chip;
+    private final ImageView thumb;
     private final ArrayList<Item> items=new ArrayList<>();
     private final HashMap<String,Button> buttons=new HashMap<>();
     private final HashMap<String,Boolean> disabled=new HashMap<>();
@@ -33,14 +37,19 @@ final class FloatingMenu {
 
     FloatingMenu(MainActivity a,FrameLayout host,SharedPreferences prefs){
         activity=a;this.host=host;this.prefs=prefs;
-        progress=Ui.text(a,"",12,Ui.TEXT);progress.setPadding(Ui.dp(a,12),Ui.dp(a,5),Ui.dp(a,12),Ui.dp(a,5));
-        GradientDrawable pill=new GradientDrawable();pill.setColor(0xCC10151A);pill.setCornerRadius(Ui.dp(a,16));pill.setStroke(Ui.dp(a,1),Ui.BORDER);progress.setBackground(pill);
-        progress.setVisibility(View.GONE);progress.setOnClickListener(v->open());
-        FrameLayout.LayoutParams pp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);pp.topMargin=Ui.dp(a,8);host.addView(progress,pp);
-        hideProgress=()->progress.setVisibility(View.GONE);
+        chip=Ui.row(a);chip.setPadding(Ui.dp(a,6),Ui.dp(a,4),Ui.dp(a,12),Ui.dp(a,4));
+        GradientDrawable pill=new GradientDrawable();pill.setColor(0xCC10151A);pill.setCornerRadius(Ui.dp(a,16));pill.setStroke(Ui.dp(a,1),Ui.BORDER);chip.setBackground(pill);
+        thumb=new ImageView(a);thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);thumb.setVisibility(View.GONE);thumb.setContentDescription("实时预览");
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(Ui.dp(a,44),Ui.dp(a,44));tp.rightMargin=Ui.dp(a,8);chip.addView(thumb,tp);
+        progress=Ui.text(a,"",12,Ui.TEXT);progress.setPadding(0,0,0,0);chip.addView(progress);
+        chip.setVisibility(View.GONE);chip.setOnClickListener(v->a.showLivePreview());
+        FrameLayout.LayoutParams pp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.CENTER_HORIZONTAL);pp.topMargin=Ui.dp(a,8);host.addView(chip,pp);
+        hideProgress=()->{chip.setVisibility(View.GONE);thumb.setVisibility(View.GONE);};
 
         sheet=Ui.column(a);Ui.pad(sheet,8);sheet.setBackground(Ui.shape(a,0xF21C242C));sheet.setElevation(Ui.dp(a,8));sheet.setVisibility(View.GONE);
         sheet.setClickable(true);
+        title=Ui.text(a,"",14,Ui.TEXT);title.setSingleLine(true);title.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);title.setPadding(Ui.dp(a,6),0,Ui.dp(a,6),0);
+        title.setVisibility(View.GONE);sheet.addView(title);
         LinearLayout top=Ui.row(a);
         status=Ui.text(a,"",12,Ui.MUTED);status.setSingleLine(true);status.setEllipsize(android.text.TextUtils.TruncateAt.END);
         status.setPadding(Ui.dp(a,6),0,Ui.dp(a,6),0);top.addView(status,new LinearLayout.LayoutParams(0,-2,1));
@@ -73,14 +82,17 @@ final class FloatingMenu {
 
     void setItems(Item... list){items.clear();java.util.Collections.addAll(items,list);layoutGrid();}
     void setStatus(String text){status.setText(text);}
+    /** The open workflow's name (and unsaved marker) shown above the actions. */
+    void setTitle(String text){title.setText(text);title.setVisibility(text==null||text.isEmpty()?View.GONE:View.VISIBLE);}
+    void showPreview(Bitmap bitmap){if(bitmap==null)return;thumb.setImageBitmap(bitmap);thumb.setVisibility(View.VISIBLE);chip.setVisibility(View.VISIBLE);chip.removeCallbacks(hideProgress);chip.postDelayed(hideProgress,8000);}
     void setEnabled(String label,boolean enabled){disabled.put(label,!enabled);Button b=buttons.get(label);if(b!=null)b.setEnabled(enabled);}
     boolean isOpen(){return sheet.getVisibility()==View.VISIBLE;}
-    void open(){layoutGrid();sheet.setVisibility(View.VISIBLE);handle.setVisibility(View.GONE);}
+    void open(){layoutGrid();sheet.setVisibility(View.VISIBLE);handle.setVisibility(View.GONE);activity.menuOpened();}
     void close(){sheet.setVisibility(View.GONE);handle.setVisibility(View.VISIBLE);}
     /** Shows sampling progress over the canvas while the menu is collapsed; it fades out once updates stop. */
     void showProgress(String text){
-        progress.setText(text);progress.setVisibility(View.VISIBLE);status.setText(text);
-        progress.removeCallbacks(hideProgress);progress.postDelayed(hideProgress,5000);
+        progress.setText(text);chip.setVisibility(View.VISIBLE);status.setText(text);
+        chip.removeCallbacks(hideProgress);chip.postDelayed(hideProgress,8000);
     }
 
     private void layoutGrid(){

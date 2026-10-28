@@ -1,0 +1,16 @@
+# op	text	a	b	arg	expected text	start	end   (shared by PromptTextTest.java and web-shell.test.cjs; \n means a line break, - means not checked)
+weight	前缀 柔和光线 后缀	3	7	0.1	前缀 (柔和光线:1.1) 后缀	3	13
+weight	(moonlight:1.2)	0	15	0.1	(moonlight:1.3)	0	15
+weight	银白长发	0	4	-0.1	(银白长发:0.9)	0	10
+weight	a, b	0	1	0.1	(a:1.1), b	0	7
+insert	portrait	8	8	soft lighting	portrait, soft lighting	23	23
+insert	portrait	0	0	soft lighting	soft lighting, portrait	13	13
+insert	portrait, 	10	10	soft lighting	portrait, soft lighting	23	23
+insert	a dark portrait	2	6	soft lighting	a soft lighting portrait	15	15
+phrase	masterpiece, (soft light:1.2), 1girl	16	-	-	-	13	29
+phrase	a,\nb	3	-	-	-	3	4
+phrase	a, b	2	-	-	-	none	none
+remove	a, b, c	3	4	-	a, c	3	3
+remove	a, b	3	4	-	a	1	1
+swap	a, bb, c	0	1	3,5	bb, a, c	4	5
+swap	a, bb, c	3	5	0,1	bb, a, c	0	2

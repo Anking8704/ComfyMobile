@@ -60,6 +60,41 @@ final class Ui {
         };
         frame.addView(content,new android.widget.FrameLayout.LayoutParams(-1,-2,Gravity.CENTER_HORIZONTAL));return frame;
     }
+    /** A searchable list in a dialog. Uses a recycling ListView, so thousands of entries (node types, models) need no cap. */
+    static android.app.AlertDialog choose(Activity a,String title,java.util.List<String> labels,java.util.List<String> details,java.util.function.IntConsumer picked){
+        LinearLayout content=column(a);pad(content,12);
+        EditText search=input(a,"搜索",false);
+        if(labels.size()>8)add(content,search);
+        java.util.ArrayList<Integer> visible=new java.util.ArrayList<>();
+        android.widget.BaseAdapter adapter=new android.widget.BaseAdapter(){
+            public int getCount(){return visible.size();}
+            public Object getItem(int i){return labels.get(visible.get(i));}
+            public long getItemId(int i){return visible.get(i);}
+            public View getView(int i,View reuse,android.view.ViewGroup parent){
+                LinearLayout row=reuse instanceof LinearLayout?(LinearLayout)reuse:column(a);
+                if(reuse==null){pad(row,10);row.addView(text(a,"",15,TEXT));row.addView(text(a,"",12,MUTED));}
+                int index=visible.get(i);TextView label=(TextView)row.getChildAt(0),detail=(TextView)row.getChildAt(1);
+                label.setText(labels.get(index));label.setPadding(0,0,0,0);
+                String sub=details==null||index>=details.size()?null:details.get(index);
+                detail.setText(sub==null?"":sub);detail.setVisibility(sub==null||sub.isEmpty()?View.GONE:View.VISIBLE);detail.setPadding(0,dp(a,2),0,0);detail.setMaxLines(2);
+                return row;
+            }
+        };
+        android.widget.ListView list=new android.widget.ListView(a);list.setAdapter(adapter);
+        content.addView(list,new LinearLayout.LayoutParams(-1,listHeight(a,480)));
+        android.app.AlertDialog dialog=new android.app.AlertDialog.Builder(a).setTitle(title).setView(content).setNegativeButton("关闭",null).create();
+        Runnable filter=()->{
+            String q=search.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);visible.clear();
+            for(int i=0;i<labels.size();i++){
+                String hay=(labels.get(i)+" "+(details==null||i>=details.size()||details.get(i)==null?"":details.get(i))).toLowerCase(java.util.Locale.ROOT);
+                if(q.isEmpty()||hay.contains(q))visible.add(i);
+            }
+            adapter.notifyDataSetChanged();
+        };
+        search.addTextChangedListener(new PromptEditor.SimpleWatcher(filter));filter.run();
+        list.setOnItemClickListener((p,v,i,id)->{dialog.dismiss();picked.accept((int)id);});
+        dialog.show();return dialog;
+    }
     static ScrollView scroll(Context c,View content) {ScrollView s=new ScrollView(c);s.setFillViewport(true);s.addView(content);return s;}
     static void pad(View v,int n) {int p=dp(v.getContext(),n);v.setPadding(p,p,p,p);}
     static void hideKeyboard(Activity a,View v) {
