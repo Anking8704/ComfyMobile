@@ -134,7 +134,7 @@ final class PromptEditor {
         else load.run();
     }
 
-    private void replace(String value){replacing=true;text.setText(value);text.setSelection(text.length());last=value;replacing=false;persist();}
+    private void replace(String value){lastTypedAt=0;replacing=true;text.setText(value);text.setSelection(text.length());last=value;replacing=false;persist();}
     private void history(boolean forward){
         ArrayDeque<String> from=forward?redo:undo,to=forward?undo:redo;
         if(from.isEmpty())return;to.push(text.getText().toString());replace(from.pop());

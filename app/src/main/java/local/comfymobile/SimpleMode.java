@@ -45,8 +45,9 @@ final class SimpleMode {
     private String source="auto";
     private int attempts=0;
     private JSONObject latest;
-    private PhotoPicker picker;
-    private JSONObject imageTarget;
+    // Static: rotating while the camera is open rebuilds this page, and the result must still reach the upload.
+    private static PhotoPicker picker;
+    private static JSONObject imageTarget;
 
     SimpleMode(MainActivity a){
         activity=a;root=Ui.column(a);Ui.pad(root,8);

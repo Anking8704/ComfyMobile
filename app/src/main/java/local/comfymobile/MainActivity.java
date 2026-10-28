@@ -173,7 +173,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
         if(server!=null&&server.origin().equals(address.origin())&&editor!=null)return;
         submission.reset();
         if(editor!=null)editor.destroy();server=address;client=new ComfyClient(server);rememberServer(server.origin());
-        editor=new EditorView(this,server,this);prompt.resetTarget();setupLoads=-1;setupPending=false;previewSeq=0;
+        editor=new EditorView(this,server,this);prompt.resetTarget();setupLoads=-1;setupPending=false;previewSeq=0;previewPending=false;
         status("正在加载编辑器");
         eventEpoch++;handler.removeCallbacks(eventTick);if(active)handler.post(eventTick);
     }
@@ -323,6 +323,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     void generate(boolean front){
         final int epoch=submission.begin();if(epoch<0)return;
+        if(prefs.getBoolean("notify",true)&&!prefs.getBoolean("asked_notify",false)){prefs.edit().putBoolean("asked_notify",true).apply();GenerationWatch.askPermission(this);}
         syncMenuState();if(simple!=null)simple.setBusy(true);status("正在提交");
         editor.command("generate",NodePanel.args("batch",prefs.getInt("batch",1),"front",front),r->{
             if(!submission.finish(epoch))return;syncMenuState();if(simple!=null)simple.setBusy(false);

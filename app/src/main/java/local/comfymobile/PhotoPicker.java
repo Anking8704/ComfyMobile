@@ -35,7 +35,7 @@ final class PhotoPicker {
     Uri[] result(int resultCode,Intent data){
         Uri[] uris=null;
         if(resultCode==Activity.RESULT_OK&&data!=null&&data.getClipData()!=null){uris=new Uri[data.getClipData().getItemCount()];for(int i=0;i<uris.length;i++)uris[i]=data.getClipData().getItemAt(i).getUri();}
-        else if(resultCode==Activity.RESULT_OK&&data!=null&&data.getData()!=null)uris=new Uri[]{data.getData()};
+        else if(resultCode==Activity.RESULT_OK&&data!=null&&data.getData()!=null){uris=new Uri[]{data.getData()};if(data.getData().equals(camera))camera=null;}
         else if(resultCode==Activity.RESULT_OK&&camera!=null&&hasContent(camera)){Uri photo=camera;camera=null;return new Uri[]{photo};}
         discard();return uris;
     }

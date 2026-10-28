@@ -246,7 +246,7 @@
     const href=anchor.href||'',name=anchor.getAttribute('download')||'download';
     if(href.startsWith('blob:')||href.startsWith('data:')) {
       fetch(href).then(r=>r.blob()).then(blob=>{
-        if(blob.size>20*1024*1024){push('download',{name,error:'文件超过 20 MB，请在电脑上下载'});return;}
+        if(blob.size>5*1024*1024){push('download',{name,error:'文件超过 5 MB，请在电脑上下载'});return;}
         const reader=new FileReader();reader.onload=()=>push('download',{name,mime:blob.type,dataUrl:reader.result});reader.readAsDataURL(blob);
       }).catch(error=>push('download',{name,error:String(error.message||error)}));
       return true;
@@ -271,9 +271,10 @@
     source.addEventListener('promptQueued', event => {
       if(submission && event.detail?.requestId===submission.requestId && event.detail?.batchCount>0) submission.accepted=true;
     });
-    source.addEventListener('status', event => { const remaining=event.detail?.exec_info?.queue_remaining; if(typeof remaining==='number')state.queueRemaining=remaining; });
+    // An empty queue also ends "running": a job may finish while the socket was reconnecting and its end event is lost.
+    source.addEventListener('status', event => { const remaining=event.detail?.exec_info?.queue_remaining; if(typeof remaining==='number'){state.queueRemaining=remaining;if(remaining===0){state.running=null;state.progress=null;}} });
     source.addEventListener('progress', event => { const d=event.detail||{}; state.progress={value:d.value,max:d.max,node:d.node??null,prompt_id:d.prompt_id??null}; });
-    source.addEventListener('executing', event => { const d=event.detail; state.executing=d==null?null:(typeof d==='object'?(d.node??null):d); });
+    source.addEventListener('executing', event => { const d=event.detail; state.executing=d==null?null:(typeof d==='object'?(d.node??null):d); if(state.executing==null&&state.queueRemaining===0)state.running=null; });
     source.addEventListener('execution_start', event => { state.running=event.detail?.prompt_id??true;state.progress=null;push('execution_start',{prompt_id:event.detail?.prompt_id}); });
     for (const type of ['execution_success','execution_error','execution_interrupted']) source.addEventListener(type, event => {
       const d=event.detail||{};state.running=null;state.progress=null;state.executing=null;
@@ -324,7 +325,9 @@
     return first==null||typeof name!=='string'?null:{graphId:null,nodeId:first,name};
   }
   function resolveEntry(parsed) {
-    const r=root(),graph=parsed.graphId&&isMap(r.subgraphs)?(r.subgraphs.get(parsed.graphId)||r):r;
+    // A subgraph that no longer exists must not fall back to a same-numbered node in the root graph.
+    const r=root(),graph=!parsed.graphId||parsed.graphId===String(r.id)?r:isMap(r.subgraphs)?r.subgraphs.get(parsed.graphId):null;
+    if(!graph)return null;
     const node=graph.getNodeById(parsed.nodeId),index=(node?.widgets||[]).findIndex(w=>w.name===parsed.name);
     return index<0?null:describe(graph,node,node.widgets[index],index);
   }
@@ -415,8 +418,8 @@
         if(typeof args.nativeDownloads==='boolean')nativeDownloads=args.nativeDownloads;
         if(typeof args.hideInfo==='boolean'){
           // The frontend re-applies its setting on some state changes, so the debug overlay is pinned off on this canvas only.
-          if(args.hideInfo)Object.defineProperty(canvas,'show_info',{configurable:true,get:()=>false,set(){}});
-          else {delete canvas.show_info;canvas.show_info=true;}
+          if(args.hideInfo){if(!('__cmInfo' in canvas))canvas.__cmInfo=canvas.show_info;Object.defineProperty(canvas,'show_info',{configurable:true,get:()=>false,set(v){canvas.__cmInfo=v;}});}
+          else if('__cmInfo' in canvas){const saved=canvas.__cmInfo;delete canvas.show_info;delete canvas.__cmInfo;canvas.show_info=saved;}
           canvas.setDirty?.(true,true);
         }
         if(canvas&&typeof args.performance==='boolean'&&'min_font_size_for_lod' in canvas){

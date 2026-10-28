@@ -303,3 +303,15 @@ test('re-running a past task submits its prompt with fresh seeds',async()=>{
   assert.equal(r.ok,true);const sent=f.api.posted[0];assert.equal(sent.path,'/prompt');
   assert.notEqual(sent.body.prompt['3'].inputs.seed,1);assert.equal(sent.body.prompt['3'].inputs.steps,20);assert.equal(sent.body.client_id,'phone');
 });
+test('an empty queue clears a running job whose end event was lost during a reconnect',async()=>{
+  const f=fixture();f.listeners.get('execution_start')({detail:{prompt_id:'p'}});
+  assert.notEqual((await f.bridge.drainEvents()).state.running,null);
+  f.listeners.get('status')({detail:{exec_info:{queue_remaining:0}}});
+  assert.equal((await f.bridge.drainEvents()).state.running,null);
+});
+test('a simple-mode entry for a deleted subgraph never falls back to a root node with the same id',async()=>{
+  const {f}=linkedFixture();f.graph.subgraphs=new Map();
+  f.graph.extra={linearData:{inputs:[['gone-sg:9:cfg','cfg']]}};
+  const r=await f.bridge.command('simple',{});
+  assert.equal(r.source,'auto');
+});

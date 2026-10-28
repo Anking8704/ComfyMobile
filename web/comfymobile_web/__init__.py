@@ -54,7 +54,7 @@ def _token():
 
 
 def _loopback(request):
-    return (request.remote or "") in ("127.0.0.1", "::1", "localhost")
+    return (request.remote or "") in ("127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost")
 
 
 def _serve(name):

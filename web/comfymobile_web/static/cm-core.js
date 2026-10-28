@@ -129,7 +129,8 @@ window.CM = (() => {
   async function checkServer() {
     let ok = false;
     try { ok = (await fetch('/api/system_stats', { cache: 'no-store' })).ok; } catch { ok = false; }
-    if (ok) { if (failures >= 2) { $('#offline').hidden = true; CM.reloadEditor(); } failures = 0; }
+    // After a short outage the open editor usually reconnects by itself; reloading would drop its undo history.
+    if (ok) { if (failures >= 2) { $('#offline').hidden = true; if (!editorWindow()?.comfyAPI?.app?.app?.graph) CM.reloadEditor(); } failures = 0; }
     else if (++failures >= 2) $('#offline').hidden = false;
   }
   setInterval(checkServer, 5000);

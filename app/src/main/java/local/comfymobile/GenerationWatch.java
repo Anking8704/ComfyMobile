@@ -46,7 +46,8 @@ public final class GenerationWatch extends Service {
         String origin=intent==null?null:intent.getStringExtra(ORIGIN);
         if(origin==null){stopSelf();return START_NOT_STICKY;}
         Notification n=notification("电脑正在生成，完成后会通知你",true);
-        if(Build.VERSION.SDK_INT>=29)startForeground(ONGOING,n,ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);else startForeground(ONGOING,n);
+        // Android 14+ may refuse or time-limit data-sync services; then there is simply no notification.
+        try{startForeground(ONGOING,n,ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);}catch(Exception e){stopSelf();return START_NOT_STICKY;}
         if(thread!=null)return START_NOT_STICKY;
         thread=new Thread(()->watch(origin));thread.start();
         return START_NOT_STICKY;
@@ -62,7 +63,7 @@ public final class GenerationWatch extends Service {
                     JSONArray runningJobs=queue.optJSONArray("queue_running"),pending=queue.optJSONArray("queue_pending");
                     int left=(runningJobs==null?0:runningJobs.length())+(pending==null?0:pending.length());
                     if(left==0){
-                        JSONObject latest=client.json("/api/jobs?limit=1").optJSONArray("jobs").optJSONObject(0);
+                        JSONArray jobs=client.json("/api/jobs?limit=1").optJSONArray("jobs");JSONObject latest=jobs==null?null:jobs.optJSONObject(0);
                         String status=latest==null?"":latest.optString("status");
                         String text=status.equals("failed")?"生成失败，打开查看任务记录":status.equals("cancelled")?"生成已停止":"生成完成，点击查看结果";
                         getSystemService(NotificationManager.class).notify(DONE,notification(text,false));
@@ -73,6 +74,7 @@ public final class GenerationWatch extends Service {
         }catch(Exception ignored){}
         stopSelf();
     }
+    @Override public void onTimeout(int startId,int type){stopSelf();}
     @Override public void onDestroy(){stopped=true;if(thread!=null)thread.interrupt();super.onDestroy();}
     @Override public IBinder onBind(Intent intent){return null;}
 }

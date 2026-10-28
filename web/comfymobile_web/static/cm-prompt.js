@@ -11,7 +11,7 @@
   function persist() { store.set('draft', text.value); store.set('draftLabel', prompt.label || store.get('draftLabel', '')); store.set('draftSaved', prompt.saved); }
   function renderTarget() { $('#field-label').textContent = prompt.target ? prompt.label : (text.value ? '草稿未绑定 · 点此选择节点字段' : '选择节点文字字段'); }
   CM.resetTarget = () => { prompt.target = null; renderTarget(); };
-  function replaceText(value, start, end) { text.value = value; prompt.last = value; persist(); if (start != null) text.setSelectionRange(start, end ?? start); }
+  function replaceText(value, start, end) { prompt.typedAt = 0; text.value = value; prompt.last = value; persist(); if (start != null) text.setSelectionRange(start, end ?? start); }
   function remember() { prompt.undo.push(prompt.last); if (prompt.undo.length > 80) prompt.undo.shift(); prompt.redo = []; }
   text.addEventListener('input', () => {
     if (text.value === prompt.last) return;
