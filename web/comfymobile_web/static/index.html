@@ -16,12 +16,42 @@
 <body>
 <iframe id="editor" src="/" title="ComfyUI 编辑器"></iframe>
 
-<div id="chip" class="chip" hidden></div>
+<button id="chip" class="chip" type="button" hidden><img id="chip-thumb" alt="" hidden><span id="chip-text"></span></button>
 <button id="handle" class="handle" type="button" aria-label="展开功能菜单">≡</button>
 
 <section id="sheet" class="sheet" hidden aria-label="工作流功能">
+  <div id="workflow-title" class="workflow-title" hidden></div>
   <div class="sheet-top"><span id="status" class="status">正在加载编辑器</span><button type="button" data-act="close-sheet">收起</button></div>
   <div id="actions" class="actions"></div>
+</section>
+
+<section id="offline" class="offline" hidden>
+  <div class="dialog">
+    <h2>连不上电脑</h2>
+    <p>请确认电脑开着、ComfyUI 正在运行并开启了局域网监听，iPad 与电脑在同一 Wi-Fi。恢复后会自动重新连接。</p>
+    <div class="buttons"><button type="button" class="primary" data-act="retry">重试</button></div>
+  </div>
+</section>
+
+<section id="simple" class="page" hidden aria-label="简洁模式">
+  <header class="bar">
+    <button type="button" data-act="back">画布</button>
+    <button type="button" id="simple-title" class="field-label" data-act="workflow">简洁模式</button>
+    <button type="button" data-act="simple-options">⋯</button>
+  </header>
+  <p id="simple-status" class="muted small simple-status"></p>
+  <div class="simple-body">
+    <div id="simple-result" class="simple-result"><img id="simple-image" alt="最新结果" hidden><span id="simple-result-label" class="muted">生成后，结果显示在这里</span></div>
+    <div id="simple-fields" class="simple-fields"></div>
+  </div>
+  <footer class="simple-footer">
+    <button type="button" data-act="batch-down" aria-label="减少数量">−</button>
+    <button type="button" id="batch-count" class="count" data-act="batch">1 次</button>
+    <button type="button" data-act="batch-up" aria-label="增加数量">+</button>
+    <button type="button" id="simple-generate" class="primary grow" data-act="generate">开始生成</button>
+    <button type="button" id="simple-stop" data-act="stop" disabled>停止</button>
+  </footer>
+  <input id="simple-upload" type="file" accept="image/*" hidden>
 </section>
 
 <section id="prompt" class="page" hidden aria-label="提示词编辑">
@@ -35,6 +65,7 @@
       <textarea id="text" spellcheck="false" autocapitalize="sentences" placeholder="双击画布上的提示词节点，或点上方选择字段；也可以先在这里写草稿"></textarea>
       <div class="tools">
         <button type="button" data-act="library">词库</button>
+        <button type="button" data-act="tags">标签</button>
         <button type="button" data-act="templates">模板</button>
         <button type="button" data-act="history">历史</button>
         <button type="button" data-act="undo-text">撤销</button>
@@ -66,21 +97,28 @@
     </div>
     <button type="button" class="primary" data-act="refresh">刷新</button>
   </header>
-  <p id="results-summary" class="muted results-summary">从电脑读取任务记录</p>
+  <div class="results-tools"><span id="results-summary" class="muted small grow">从电脑读取任务记录</span>
+    <button type="button" data-act="stop">停止当前</button><button type="button" data-act="clear-queue">清空排队</button></div>
   <div id="results-list" class="grid"></div>
 </section>
 
 <div id="modal" class="modal" hidden></div>
 <div id="viewer" class="viewer" hidden>
-  <img id="viewer-image" alt="">
+  <div id="viewer-stage" class="viewer-stage"><img id="viewer-image" alt=""><video id="viewer-video" controls playsinline loop hidden></video></div>
   <div class="viewer-bar">
-    <span class="muted small">长按图片可“存储到照片”</span>
+    <span id="viewer-hint" class="muted small">双指或双击放大 · 长按图片可“存储到照片”</span>
     <a id="viewer-open" class="button" target="_blank" rel="noopener">新标签打开原图</a>
     <button type="button" data-act="close-viewer">关闭</button>
   </div>
 </div>
 <input id="import-file" type="file" accept=".json,application/json" hidden>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="prompt-text.js"></script>
+<script src="cm-core.js"></script>
+<script src="cm-canvas.js"></script>
+<script src="cm-prompt.js"></script>
+<script src="cm-simple.js"></script>
+<script src="cm-results.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

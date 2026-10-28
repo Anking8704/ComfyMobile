@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "sizes": [
+    {
+      "name": "ipad-landscape",
+      "viewport": [
+        1180,
+        820
+      ],
+      "label": "【正向】CLIP文本编码 · #72 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": true,
+      "menuButtons": 14,
+      "results": "共 14 条",
+      "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,高度,一次出图张数"
+    },
+    {
+      "name": "ipad-portrait",
+      "viewport": [
+        820,
+        1180
+      ],
+      "label": "【正向】CLIP文本编码 · #75 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": false,
+      "menuButtons": 14,
+      "results": "共 14 条",
+      "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
+    },
+    {
+      "name": "phone-portrait",
+      "viewport": [
+        375,
+        667
+      ],
+      "label": "【正向】CLIP文本编码 · #78 / text",
+      "libraryItems": 300,
+      "inserted": "soft lighting",
+      "sidebar": false,
+      "menuButtons": 14,
+      "results": "共 14 条",
+      "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
+    }
+  ],
+  "checks": [
+    "adapter injected into the embedded editor",
+    "original menus hidden (full-screen canvas)",
+    "single tap does not navigate",
+    "real touch double tap opens the exact field",
+    "bilingual library inserts English only",
+    "save writes back to the node",
+    "floating menu fits the screen",
+    "gallery page has no horizontal overflow",
+    "simple mode detects positive prompt, seed and size",
+    "simple mode prompt card opens the editor and back returns to simple mode"
+  ]
+}

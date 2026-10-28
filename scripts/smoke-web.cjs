@@ -19,7 +19,7 @@ const server=http.createServer(async(req,res)=>{
   if(route==='/extensions'){res.writeHead(200,{'content-type':'application/json'});res.end('[]');return;}
   const response=await fetch('http://127.0.0.1:8188'+req.url);
   let data;
-  if(route==='/object_info') {const all=await response.json();data=Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(all).filter(([name])=>['CLIPTextEncode','KSampler','EmptyLatentImage','SaveImage'].includes(name)))));}
+  if(route==='/object_info') {const all=await response.json();data=Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(all).filter(([name])=>['CLIPTextEncode','KSampler','EmptyLatentImage','SaveImage','LoadImage','CheckpointLoaderSimple'].includes(name)))));}
   else data=Buffer.from(await response.arrayBuffer());
   res.writeHead(response.status,{'content-type':response.headers.get('content-type')||'application/octet-stream','cache-control':'no-store'});res.end(data);
  }catch(error){res.writeHead(502);res.end(String(error));}
@@ -51,7 +51,11 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
      await app.loadGraphData({last_node_id:0,last_link_id:0,nodes:[],links:[],groups:[],config:{},extra:{},version:.4},true,true,null,{skipAssetScans:true,deferWarnings:true});
      await new Promise(r=>setTimeout(r,400));
      const added=await b.command('add',{type:'CLIPTextEncode'});if(!added.ok)throw Error(added.error);
-     const node=app.graph.getNodeById(added.nodeId);node.pos=[60,80];node.size=[Math.min(420,innerWidth-140),240];app.canvas.ds.scale=1;app.canvas.ds.offset=[0,0];app.canvas.setDirty(true,true);app.canvas.draw(true,true);
+     const node=app.graph.getNodeById(added.nodeId);node.pos=[60,80];node.size=[Math.min(420,innerWidth-140),240];app.canvas.ds.scale=1;app.canvas.ds.offset=[0,0];
+     // A real positive-prompt chain, so simple mode has something to detect.
+     const L=w.LiteGraph,k=L.createNode('KSampler'),latent=L.createNode('EmptyLatentImage');k.pos=[900,80];latent.pos=[900,500];app.graph.add(k);app.graph.add(latent);
+     node.connect(0,k,k.inputs.findIndex(i=>i.name==='positive'));latent.connect(0,k,k.inputs.findIndex(i=>i.name==='latent_image'));
+     app.canvas.setDirty(true,true);app.canvas.draw(true,true);
      await new Promise(r=>setTimeout(r,700));
      const widget=node.widgets.find(x=>x.name==='text');widget.value='original prompt';const el=widget.element;
      const input=el?.matches?.('textarea,input')?el:el?.querySelector?.('textarea,input');input.value='original prompt';
@@ -80,6 +84,7 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
      const sidebar=getComputedStyle(document.querySelector('#library')).display!=='none';
      return {label,items,english,sidebar};
    })()`);
+   if(!/正向/.test(editing.label))throw Error(name+': prompt label should name the positive role: '+editing.label);
    if(name==='ipad-landscape'&&!editing.sidebar)throw Error('iPad landscape should keep the library beside the editor');
    await evaluate(`document.querySelector('[data-act="back"]').click()`);await sleep(300);
    await touch(...setup.handle);await sleep(300);
@@ -90,9 +95,21 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    const results=await evaluate(`(()=>{const p=document.querySelector('#results');return {open:!p.hidden,summary:document.querySelector('#results-summary').textContent,overflow:document.documentElement.scrollWidth>innerWidth}})()`);
    if(!results.open||results.overflow)throw Error(name+': results page '+JSON.stringify(results));
    await shot(name+'-gallery.png');
-   report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary});
+   await evaluate('CM.showSimple()');let simple;
+   for(let i=0;i<20;i++){await sleep(300);simple=await evaluate(`(()=>{const p=document.querySelector('#simple');const cards=[...document.querySelectorAll('#simple-fields .control')];
+     return {open:!p.hidden,cards:cards.length,text:cards.map(c=>c.querySelector('strong').textContent).join(','),overflow:document.documentElement.scrollWidth>innerWidth,
+       footer:document.querySelector('.simple-footer').getBoundingClientRect().bottom<=innerHeight+1,image:!document.querySelector('#simple-image').hidden,label:document.querySelector('#simple-result-label').textContent,src:document.querySelector('#simple-image').src.slice(0,80)};})()`);if(simple.cards>0)break;}
+   if(!simple.open||!/正向/.test(simple.text)||!/种子/.test(simple.text)||!/宽度/.test(simple.text)||simple.overflow||!simple.footer)throw Error(name+': simple mode '+JSON.stringify(simple));
+   await shot(name+'-simple.png');
+   await evaluate(`[...document.querySelectorAll('#simple-fields .control')].find(c=>/正向/.test(c.textContent)).click()`);
+   let promptOpen=false;for(let i=0;i<15&&!promptOpen;i++){await sleep(200);promptOpen=await evaluate(`!document.querySelector('#prompt').hidden`);}
+   if(!promptOpen)throw Error(name+': simple mode prompt card did not open the editor');
+   await evaluate(`document.querySelector('#prompt [data-act="back"]').click()`);await sleep(300);
+   if(await evaluate(`document.querySelector('#simple').hidden`))throw Error(name+': back from the prompt editor should return to simple mode');
+   await evaluate('CM.showCanvas()');
+   report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary,simple:simple.text});
   }
-  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow'];
+  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode'];
   fs.writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
  }catch(error){
   if(evaluate){try{await send('Page.captureScreenshot',{format:'png'}).then(r=>fs.writeFileSync(path.join(out,'failure.png'),Buffer.from(r.data,'base64')));}catch{}}

@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "checks": [
+    "undo after a node-panel delete restores exactly that node",
+    "FPS overlay pinned off and selection toolbox hidden",
+    "a text box promoted to a subgraph node is edited on the outside",
+    "fields inside subgraphs are listed with the subgraph name",
+    "double tap inside an open subgraph edits the inner field",
+    "Nodes 2.0: single tap stays, double tap edits the exact field",
+    "back key closes an open context menu first",
+    "blob downloads are handed to the app",
+    "5 workflows listed; opening one makes it the active tab",
+    "simple mode detects positive prompt, seed and size, and stores choices as App-mode linearData",
+    "add-node list shows display names and categories"
+  ]
+}

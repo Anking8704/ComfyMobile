@@ -7,6 +7,7 @@
   const events = [];
   const state = { progress: null, queueRemaining: 0, running: null, executing: null, previewSeq: 0 };
   const pageId = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+  const hidden = { toolbar: false, selection: false };
   let serial = 0, submitting = false, hookedApi = null, submission = null, latestPreview = null, nativeDownloads = false;
   const fail = error => ({ ok: false, error: String(error?.message || error) });
   const app = () => window.comfyAPI?.app?.app || window.app;
@@ -79,7 +80,8 @@
     let frontier = [node];
     for (let depth = 0; depth < 5 && frontier.length; depth++) {
       const next = [];
-      for (const current of frontier) for (const output of current.outputs || []) for (const id of output.links || []) {
+      // Only conditioning and text flow carry a prompt; following CLIP or MODEL links would mark loaders as both.
+      for (const current of frontier) for (const output of current.outputs || []) if (/CONDITIONING|STRING/i.test(String(output.type ?? 'CONDITIONING'))) for (const id of output.links || []) {
         const link = linkById(graph, id), target = link && graph.getNodeById(link.target_id);
         const name = String(target?.inputs?.[link?.target_slot]?.name || '').toLowerCase();
         if (/^(positive|negative)/.test(name)) { found.add(name.startsWith('positive') ? 'positive' : 'negative'); continue; }
@@ -337,7 +339,9 @@
       });
     }
     const rank=f=>f.role==='positive'?0:f.role==='negative'?1:f.role?2:3+Math.max(0,KEY_WIDGETS.indexOf(f.name));
-    return picked.sort((a,b)=>rank(a)-rank(b)).slice(0,24);
+    // At most two of each kind (prompts by role, other controls by name), so big workflows still show size, model and image.
+    const seen=new Map();
+    return picked.sort((a,b)=>rank(a)-rank(b)).filter(f=>{const kind=f.role?'text-'+f.role:f.name,n=(seen.get(kind)||0)+1;seen.set(kind,n);return n<=(f.role==='mixed'?1:2);}).slice(0,24);
   }
   function simpleFields() {
     const data=root().extra?.linearData,entries=Array.isArray(data?.inputs)?data.inputs:[];
@@ -409,17 +413,23 @@
         // Runtime-only tweaks for touch screens; nothing here is written to the computer's settings.
         const canvas=instance?.canvas;if(!canvas)throw new Error('编辑器尚未就绪');
         if(typeof args.nativeDownloads==='boolean')nativeDownloads=args.nativeDownloads;
-        if(canvas&&typeof args.hideInfo==='boolean'){canvas.show_info=!args.hideInfo;canvas.setDirty?.(true,true);}
+        if(typeof args.hideInfo==='boolean'){
+          // The frontend re-applies its setting on some state changes, so the debug overlay is pinned off on this canvas only.
+          if(args.hideInfo)Object.defineProperty(canvas,'show_info',{configurable:true,get:()=>false,set(){}});
+          else {delete canvas.show_info;canvas.show_info=true;}
+          canvas.setDirty?.(true,true);
+        }
         if(canvas&&typeof args.performance==='boolean'&&'min_font_size_for_lod' in canvas){
           if(args.performance){canvas.__cmLod??=canvas.min_font_size_for_lod;canvas.min_font_size_for_lod=Math.max(12,canvas.__cmLod||0);}
           else if(canvas.__cmLod!=null){canvas.min_font_size_for_lod=canvas.__cmLod;}
           canvas.setDirty?.(true,true);
         }
-        if(typeof args.toolbar==='boolean'){
-          let style=document.getElementById('comfymobile-style');
-          if(!style){style=document.createElement('style');style.id='comfymobile-style';document.head.appendChild(style);}
-          style.textContent=args.toolbar?'':'.graph-canvas-panel [role="toolbar"].p-buttongroup{display:none!important}';
-        }
+        if(typeof args.toolbar==='boolean')hidden.toolbar=!args.toolbar;
+        // On a phone the selection toolbox pops up over the node just tapped, where the second tap of a double tap lands.
+        if(typeof args.selectionToolbox==='boolean')hidden.selection=!args.selectionToolbox;
+        let style=document.getElementById('comfymobile-style');
+        if(!style){style=document.createElement('style');style.id='comfymobile-style';document.head.appendChild(style);}
+        style.textContent=(hidden.toolbar?'.graph-canvas-panel [role="toolbar"].p-buttongroup{display:none!important}':'')+(hidden.selection?'.selection-toolbox{display:none!important}':'');
         return {ok:true};
       }
       case 'escape': {

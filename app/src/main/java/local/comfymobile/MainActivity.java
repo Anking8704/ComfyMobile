@@ -111,19 +111,20 @@ public final class MainActivity extends Activity implements EditorView.Host {
         ArrayList<String> saved=savedServers();
         if(!saved.isEmpty()){
             Ui.add(content,Ui.text(this,"最近连接的电脑",14,Ui.TEXT));
-            for(String origin:saved)Ui.add(content,Ui.button(this,origin,false,()->tryConnect(origin,null,null)));
+            for(String origin:saved)Ui.add(content,Ui.button(this,origin,false,()->tryConnect(origin,"",null,null)));
         }
         Ui.add(content,Ui.text(this,"ComfyUI 服务器地址",14,Ui.TEXT));
         EditText address=Ui.input(this,"http://192.168.1.8:8188",false);address.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);
         address.setText(prefs.getString("server",""));Ui.add(content,address);
+        EditText code=Ui.input(this,"访问口令（只有电脑开启了口令才需要填）",false);code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);Ui.add(content,code);
         TextView state=Ui.text(this,"输入电脑的局域网地址，或自动查找",14,Ui.MUTED);Ui.add(content,state);
         final Button[] connect=new Button[1];
-        connect[0]=Ui.button(this,"检测并连接",true,()->tryConnect(address.getText().toString(),state,connect[0]));Ui.add(content,connect[0]);
+        connect[0]=Ui.button(this,"检测并连接",true,()->tryConnect(address.getText().toString(),code.getText().toString(),state,connect[0]));Ui.add(content,connect[0]);
         LinearLayout found=Ui.column(this);
         Ui.add(content,Ui.button(this,"自动查找局域网中的电脑",false,()->{
             if(!onLocalNetwork()){state.setText(noWifiText());return;}
             found.removeAllViews();state.setText("正在查找开放了 ComfyUI 的电脑（约 10 秒）…");
-            Discovery.scan(this,saved,origin->runOnUiThread(()->{if(isFinishing())return;Ui.add(found,Ui.button(this,"找到："+origin,false,()->tryConnect(origin,state,null)));}),
+            Discovery.scan(this,saved,origin->runOnUiThread(()->{if(isFinishing())return;Ui.add(found,Ui.button(this,"找到："+origin,false,()->tryConnect(origin,code.getText().toString(),state,null)));}),
                 count->runOnUiThread(()->state.setText(count==0?"没有找到。请确认电脑 ComfyUI 已开启局域网监听，并且手机和电脑在同一网段。":"找到 "+count+" 台，点选连接")));
         }));
         Ui.add(content,found);
@@ -131,16 +132,22 @@ public final class MainActivity extends Activity implements EditorView.Host {
         if(editor!=null)Ui.add(content,Ui.button(this,"返回当前工作流",false,()->showPage(PAGE_CANVAS)));
         Ui.add(content,Ui.text(this,"本地开发版 "+Version.NAME+" · Android 10+",12,Ui.MUTED));body.addView(Ui.scroll(this,Ui.maxWidth(content,560)));updateLayout();
     }
-    private void tryConnect(String input,TextView state,Button button){
+    private void tryConnect(String input,String code,TextView state,Button button){
         final ServerAddress candidate;
         try{candidate=ServerAddress.parse(input);}catch(IllegalArgumentException e){if(state!=null)state.setText(e.getMessage());else message(e.getMessage());return;}
+        String token=code==null?"":code.trim();
+        if(!token.isEmpty()){
+            // The computer's optional LAN access code travels as a cookie for both the editor page and the app's own requests.
+            android.webkit.CookieManager cookies=android.webkit.CookieManager.getInstance();
+            cookies.setCookie(candidate.origin(),"comfymobile_token="+token+"; Max-Age=31536000; Path=/");cookies.flush();
+        }
         if(button!=null)button.setEnabled(false);if(state!=null)state.setText("正在检查电脑上的 ComfyUI…");Ui.hideKeyboard(this,root);
         worker.execute(()->{
             try{JSONObject stats=new ComfyClient(candidate).json("/system_stats");if(!stats.has("system")||!stats.has("devices"))throw new IllegalStateException("该地址没有返回 ComfyUI 信息");
                 runOnUiThread(()->{if(isFinishing())return;attach(candidate);showPage(prefs.getInt("start_page",PAGE_CANVAS));message("连接成功");});
             }catch(Exception e){runOnUiThread(()->{
                 if(button!=null)button.setEnabled(true);
-                String text=onLocalNetwork()?"连接失败："+e.getMessage()+"\n检查 ComfyUI 是否开启局域网监听、地址和端口是否正确，或换用“自动查找”。":noWifiText();
+                String text=String.valueOf(e.getMessage()).contains("401")?"这台电脑开启了访问口令，请在上面填写口令后再连接。":onLocalNetwork()?"连接失败："+e.getMessage()+"\n检查 ComfyUI 是否开启局域网监听、地址和端口是否正确，或换用“自动查找”。":noWifiText();
                 if(state!=null)state.setText(text);else message(text);
             });}
         });
@@ -304,7 +311,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     private void applyEditorSetup(){
         if(editor==null||setupPending||editor.loads==0||setupLoads==editor.loads)return;
         final EditorView source=editor;final int load=source.loads;setupPending=true;
-        JSONObject config=NodePanel.args("nativeDownloads",true,"hideInfo",true,"toolbar",prefs.getBoolean("canvas_toolbar",true),"performance",prefs.getBoolean("performance",false));
+        JSONObject config=NodePanel.args("nativeDownloads",true,"hideInfo",true,"toolbar",prefs.getBoolean("canvas_toolbar",true),"selectionToolbox",prefs.getBoolean("selection_toolbox",false),"performance",prefs.getBoolean("performance",false));
         source.command("configure",config,c->{
             if(source!=editor)return;
             if(!c.optBoolean("ok")){setupPending=false;return;}
@@ -332,7 +339,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     private void more(){
         String[] items={"每次生成数量："+prefs.getInt("batch",1),"插队生成（排到最前）","导入工作流 JSON","导出工作流 JSON","导出上次导入前备份","查看实时预览","刷新编辑器",
-            "画布工具条："+(prefs.getBoolean("canvas_toolbar",true)?"显示":"隐藏"),"性能模式（缩小时简化绘制）："+(prefs.getBoolean("performance",false)?"开":"关"),
+            "画布工具条："+(prefs.getBoolean("canvas_toolbar",true)?"显示":"隐藏"),"选中节点时的工具条："+(prefs.getBoolean("selection_toolbox",false)?"显示":"隐藏（避免挡住双击）"),"性能模式（缩小时简化绘制）："+(prefs.getBoolean("performance",false)?"开":"关"),
             "生成时保持亮屏："+(prefs.getBoolean("keep_awake",true)?"开":"关"),"后台完成通知："+(prefs.getBoolean("notify",true)?"开":"关"),"连接设置","屏幕跟随系统"};
         new AlertDialog.Builder(this).setTitle("更多").setItems(items,(d,index)->{
             switch(index){
@@ -348,11 +355,12 @@ public final class MainActivity extends Activity implements EditorView.Host {
                 case 5:showLivePreview();break;
                 case 6:new AlertDialog.Builder(this).setMessage("刷新会重新加载电脑端编辑器。请先保存尚未保存的工作流。").setPositiveButton("刷新",(dd,w)->{editor.web.reload();prompt.resetTarget();}).setNegativeButton("取消",null).show();break;
                 case 7:togglePref("canvas_toolbar",true);break;
-                case 8:togglePref("performance",false);break;
-                case 9:togglePref("keep_awake",true);keepAwake(running);break;
-                case 10:togglePref("notify",true);if(prefs.getBoolean("notify",true))GenerationWatch.askPermission(this);break;
-                case 11:showConnection();break;
-                case 12:prefs.edit().putString("orientation","system").apply();applyOrientation("system");break;
+                case 8:togglePref("selection_toolbox",false);break;
+                case 9:togglePref("performance",false);break;
+                case 10:togglePref("keep_awake",true);keepAwake(running);break;
+                case 11:togglePref("notify",true);if(prefs.getBoolean("notify",true))GenerationWatch.askPermission(this);break;
+                case 12:showConnection();break;
+                case 13:prefs.edit().putString("orientation","system").apply();applyOrientation("system");break;
             }
         }).setNegativeButton("关闭",null).show();
     }
