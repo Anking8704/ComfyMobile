@@ -457,7 +457,9 @@ public final class MainActivity extends Activity implements EditorView.Host {
         boolean busy=!state.isNull("running")||state.optInt("queueRemaining")>0;
         if(busy!=running)setRunning(busy);
         JSONObject p=state.optJSONObject("progress");
-        if(p!=null&&p.optInt("max")>0){String label="采样 "+p.optInt("value")+" / "+p.optInt("max")+(state.optInt("queueRemaining")>1?" · 排队 "+(state.optInt("queueRemaining")-1):"");notifyProgress(label);}
+        String node=state.isNull("executingTitle")?null:state.optString("executingTitle");
+        if(p!=null&&p.optInt("max")>0){String label=(node==null?"":node+" · ")+"采样 "+p.optInt("value")+" / "+p.optInt("max")+(state.optInt("queueRemaining")>1?" · 排队 "+(state.optInt("queueRemaining")-1):"");notifyProgress(label);}
+        if(simple!=null)simple.showProgress(busy,p==null?0:p.optInt("value"),p==null?0:p.optInt("max"),node,state.optInt("queueRemaining"));
         int seq=state.optInt("previewSeq");
         long now=SystemClock.uptimeMillis();
         if(seq!=previewSeq&&!previewPending&&now-lastPreviewAt>900&&(page==PAGE_CANVAS||page==PAGE_SIMPLE)){

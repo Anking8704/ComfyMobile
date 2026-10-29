@@ -29,7 +29,7 @@ final class SimpleMode {
     private static final HashMap<String,String> NAMES=new HashMap<>();
     static {
         String[] pairs={"seed","种子","noise_seed","种子","control_after_generate","生成后种子","steps","步数","cfg","CFG 引导","sampler_name","采样器","scheduler","调度器",
-            "denoise","重绘幅度","width","宽度","height","高度","batch_size","一次出图张数","ckpt_name","模型","unet_name","模型","lora_name","LoRA","strength_model","LoRA 强度","image","输入图片","text","提示词"};
+            "denoise","重绘幅度","width","宽度","height","高度","batch_size","一次出图张数","ckpt_name","大模型","vae_name","VAE","clip_name","CLIP 模型","clip_name1","CLIP 模型 1","clip_name2","CLIP 模型 2","type","CLIP 类型","model_name","模型","strength_clip","LoRA CLIP 强度","upscale_model_name","放大模型","control_net_name","ControlNet","unet_name","模型","lora_name","LoRA","strength_model","LoRA 强度","image","输入图片","text","提示词"};
         for(int i=0;i<pairs.length;i+=2)NAMES.put(pairs[i],pairs[i+1]);
     }
     private static final HashMap<String,String> SEED_MODES=new HashMap<>();
@@ -38,7 +38,9 @@ final class SimpleMode {
 
     private final MainActivity activity;
     private final LinearLayout root,fields;
-    private final TextView title,status,resultLabel,count;
+    private final TextView title,status,resultLabel,count,stage,steps;
+    private final LinearLayout progressPanel;
+    private final android.widget.ProgressBar bar;
     private final ImageView result;
     private final Button generate,stop;
     private JSONArray current=new JSONArray();
@@ -60,6 +62,14 @@ final class SimpleMode {
         root.addView(top);
         status=Ui.text(a,"",12,Ui.MUTED);status.setSingleLine(true);status.setEllipsize(android.text.TextUtils.TruncateAt.END);root.addView(status);
 
+        // Progress panel: which node runs, a bar for its steps, and the queue; shown only while the computer works.
+        progressPanel=Ui.column(a);progressPanel.setBackground(Ui.shape(a,0xFF14302E));Ui.pad(progressPanel,10);progressPanel.setVisibility(View.GONE);
+        stage=Ui.text(a,"正在准备…",15,Ui.TEXT);stage.setPadding(0,0,0,Ui.dp(a,4));stage.setSingleLine(true);stage.setEllipsize(android.text.TextUtils.TruncateAt.END);progressPanel.addView(stage);
+        bar=new android.widget.ProgressBar(a,null,android.R.attr.progressBarStyleHorizontal);bar.setMax(100);bar.setIndeterminate(true);
+        bar.setProgressTintList(android.content.res.ColorStateList.valueOf(Ui.TEAL));bar.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Ui.TEAL));
+        progressPanel.addView(bar,new LinearLayout.LayoutParams(-1,Ui.dp(a,10)));
+        steps=Ui.text(a,"",13,Ui.MUTED);progressPanel.addView(steps);
+        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,-2);pp.bottomMargin=Ui.dp(a,8);root.addView(progressPanel,pp);
         FrameLayout box=new FrameLayout(a);box.setBackground(Ui.shape(a,Ui.SURFACE));
         result=new ImageView(a);result.setScaleType(ImageView.ScaleType.FIT_CENTER);result.setContentDescription("最新结果");
         box.addView(result,new FrameLayout.LayoutParams(-1,-1));
@@ -96,8 +106,18 @@ final class SimpleMode {
     private boolean wide(){return activity.isLandscape()||Ui.wide(activity);}
     void setTitle(String text){title.setText(text==null||text.isEmpty()?"简洁模式":text.replace("工作流：",""));}
     void progress(String label){status.setText(label);}
+    /** Live progress from the editor: the running node, its sampling steps and how many jobs wait behind it. */
+    void showProgress(boolean running,int value,int max,String node,int queued){
+        if(!running){progressPanel.setVisibility(View.GONE);return;}
+        progressPanel.setVisibility(View.VISIBLE);
+        stage.setText(node==null||node.isEmpty()?"正在生成…":"正在执行："+node);
+        if(max>0){bar.setIndeterminate(false);bar.setMax(max);bar.setProgress(Math.min(value,max));}else bar.setIndeterminate(true);
+        String text=max>0?"第 "+value+" / "+max+" 步 · "+Math.round(100f*value/max)+"%":"等待电脑开始采样";
+        if(queued>1)text+=" · 后面还有 "+(queued-1)+" 个任务";
+        steps.setText(text);
+    }
     void setBusy(boolean busy){generate.setEnabled(!busy);}
-    void setRunning(boolean running){stop.setEnabled(running);if(running)resultLabel.setText("正在生成…");}
+    void setRunning(boolean running){stop.setEnabled(running);if(running){resultLabel.setText("正在生成…");showProgress(true,0,0,null,0);}else progressPanel.setVisibility(View.GONE);}
     void showPreview(Bitmap bitmap){if(bitmap==null)return;result.setImageBitmap(bitmap);resultLabel.setText("");latest=null;}
     void orientationChanged(){activity.showPage(MainActivity.PAGE_SIMPLE);}
     boolean back(){return false;}

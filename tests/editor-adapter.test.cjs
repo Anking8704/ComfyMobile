@@ -315,3 +315,24 @@ test('a simple-mode entry for a deleted subgraph never falls back to a root node
   const r=await f.bridge.command('simple',{});
   assert.equal(r.source,'auto');
 });
+test('simple mode lists every model loader (UNET, CLIP, VAE, each LoRA with its strength)',async()=>{
+  const {f}=linkedFixture();f.graph.extra={};
+  const combo=(name,value)=>({name,type:'combo',value,options:{values:[value,'other.safetensors']}});
+  const loaders=[
+    {id:20,type:'UNETLoader',title:'UNet加载器',widgets:[combo('unet_name','flux.safetensors'),combo('weight_dtype','default')]},
+    {id:21,type:'CLIPLoader',title:'CLIP加载器',widgets:[combo('clip_name','qwen.safetensors'),combo('type','qwen_image'),combo('device','default')]},
+    {id:22,type:'VAELoader',title:'VAE加载器',widgets:[combo('vae_name','ae.safetensors')]},
+    ...[23,24,25].map(id=>({id,type:'LoraLoaderModelOnly',title:'LoRA '+id,widgets:[combo('lora_name','l'+id+'.safetensors'),{name:'strength_model',type:'number',value:1,options:{min:-10,max:10,step2:0.01}}]})),
+  ].map(n=>({...n,inputs:[],outputs:[],pos:[0,0],setDirtyCanvas(){}}));
+  f.graph._nodes.push(...loaders);
+  const names=[...(await f.bridge.command('simple',{})).fields.map(x=>x.name)];
+  for(const n of ['unet_name','clip_name','type','vae_name'])assert.ok(names.includes(n),n);
+  assert.equal(names.filter(n=>n==='lora_name').length,3);assert.equal(names.filter(n=>n==='strength_model').length,3);
+  assert.ok(!names.includes('device')&&!names.includes('weight_dtype'));
+  const i=names.indexOf('lora_name');assert.equal(names[i+1],'strength_model');
+});
+test('state names the node that is currently running',async()=>{
+  const f=fixture();f.listeners.get('execution_start')({detail:{prompt_id:'p'}});
+  f.listeners.get('executing')({detail:{node:'6',prompt_id:'p'}});
+  assert.equal((await f.bridge.drainEvents()).state.executingTitle,'自定义文本');
+});

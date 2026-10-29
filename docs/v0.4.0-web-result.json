@@ -12,7 +12,7 @@
       "inserted": "soft lighting",
       "sidebar": true,
       "menuButtons": 14,
-      "results": "共 14 条",
+      "results": "共 16 条",
       "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,高度,一次出图张数"
     },
     {
@@ -26,8 +26,8 @@
       "inserted": "soft lighting",
       "sidebar": false,
       "menuButtons": 14,
-      "results": "共 14 条",
-      "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
+      "results": "共 16 条",
+      "simple": "【正向】提示词,【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
     },
     {
       "name": "phone-portrait",
@@ -40,8 +40,8 @@
       "inserted": "soft lighting",
       "sidebar": false,
       "menuButtons": 14,
-      "results": "共 14 条",
-      "simple": "【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
+      "results": "共 16 条",
+      "simple": "【正向】提示词,【正向】提示词,【正向】提示词,【反向】提示词,种子,种子,生成后种子,生成后种子,步数,步数,CFG 引导,CFG 引导,采样器,采样器,调度器,调度器,重绘幅度,重绘幅度,宽度,宽度,高度,高度,一次出图张数,一次出图张数"
     }
   ],
   "checks": [
@@ -54,6 +54,7 @@
     "floating menu fits the screen",
     "gallery page has no horizontal overflow",
     "simple mode detects positive prompt, seed and size",
-    "simple mode prompt card opens the editor and back returns to simple mode"
+    "simple mode prompt card opens the editor and back returns to simple mode",
+    "simple mode shows the running node, step bar, percentage and queue, and hides it when done"
   ]
 }

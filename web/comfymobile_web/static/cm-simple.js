@@ -4,7 +4,8 @@
   'use strict';
   const { $, store, escapeHtml } = CM;
   const NAMES = { seed: '种子', noise_seed: '种子', control_after_generate: '生成后种子', steps: '步数', cfg: 'CFG 引导', sampler_name: '采样器', scheduler: '调度器',
-    denoise: '重绘幅度', width: '宽度', height: '高度', batch_size: '一次出图张数', ckpt_name: '模型', unet_name: '模型', lora_name: 'LoRA', strength_model: 'LoRA 强度', image: '输入图片', text: '提示词' };
+    denoise: '重绘幅度', width: '宽度', height: '高度', batch_size: '一次出图张数', ckpt_name: '大模型', unet_name: '模型', lora_name: 'LoRA', strength_model: 'LoRA 强度', image: '输入图片', text: '提示词',
+    vae_name: 'VAE', clip_name: 'CLIP 模型', clip_name1: 'CLIP 模型 1', clip_name2: 'CLIP 模型 2', type: 'CLIP 类型', model_name: '模型', strength_clip: 'LoRA CLIP 强度', upscale_model_name: '放大模型', control_net_name: 'ControlNet' };
   const SEED_MODES = { fixed: '固定', increment: '递增', decrement: '递减', randomize: '每次随机' };
   const SIZES = [[1024, 1024], [832, 1216], [1216, 832], [768, 1344], [1344, 768], [512, 768], [768, 512]];
   let fields = [], source = 'auto', latest = null, uploadTarget = null;
@@ -147,6 +148,16 @@
   CM.on('progress', text => { if (!$('#simple').hidden) $('#simple-status').textContent = text; });
   CM.on('preview', dataUrl => { if (!$('#simple').hidden) { const img = $('#simple-image'); img.src = dataUrl; img.hidden = false; $('#simple-result-label').textContent = ''; latest = null; } });
   CM.on('running', busy => { $('#simple-stop').disabled = !busy; });
+  // Progress panel: the running node, a bar for its sampling steps, and the queue behind it.
+  CM.on('state', (state, busy) => {
+    const panel = $('#simple-progress'); panel.hidden = !busy; if (!busy) return;
+    const p = state.progress, bar = $('#simple-bar');
+    $('#simple-stage').textContent = state.executingTitle ? '正在执行：' + state.executingTitle : '正在生成…';
+    bar.classList.toggle('indeterminate', !(p?.max > 0)); bar.style.width = p?.max > 0 ? `${Math.min(100, 100 * p.value / p.max)}%` : '';
+    let text = p?.max > 0 ? `第 ${p.value} / ${p.max} 步 · ${Math.round(100 * p.value / p.max)}%` : '等待电脑开始采样';
+    if (state.queueRemaining > 1) text += ` · 后面还有 ${state.queueRemaining - 1} 个任务`;
+    $('#simple-steps').textContent = text;
+  });
   $('#simple-result').addEventListener('click', () => latest ? CM.openOutput(latest) : null);
 
   const batch = delta => { const n = Math.max(1, Math.min(100, store.get('batch', 1) + delta)); store.set('batch', n); $('#batch-count').textContent = `${n} 次`; };

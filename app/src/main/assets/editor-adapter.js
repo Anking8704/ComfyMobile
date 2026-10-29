@@ -5,7 +5,7 @@
   const tokenByPlace = new Map();
   // Only rare, meaningful events are queued; high-frequency status/progress/preview data lives in `state`.
   const events = [];
-  const state = { progress: null, queueRemaining: 0, running: null, executing: null, previewSeq: 0 };
+  const state = { progress: null, queueRemaining: 0, running: null, executing: null, executingTitle: null, previewSeq: 0 };
   const pageId = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   const hidden = { toolbar: false, selection: false };
   let serial = 0, submitting = false, hookedApi = null, submission = null, latestPreview = null, nativeDownloads = false;
@@ -274,7 +274,13 @@
     // An empty queue also ends "running": a job may finish while the socket was reconnecting and its end event is lost.
     source.addEventListener('status', event => { const remaining=event.detail?.exec_info?.queue_remaining; if(typeof remaining==='number'){state.queueRemaining=remaining;if(remaining===0){state.running=null;state.progress=null;}} });
     source.addEventListener('progress', event => { const d=event.detail||{}; state.progress={value:d.value,max:d.max,node:d.node??null,prompt_id:d.prompt_id??null}; });
-    source.addEventListener('executing', event => { const d=event.detail; state.executing=d==null?null:(typeof d==='object'?(d.node??null):d); if(state.executing==null&&state.queueRemaining===0)state.running=null; });
+    source.addEventListener('executing', event => {
+      const d=event.detail; state.executing=d==null?null:(typeof d==='object'?(d.node??null):d);
+      if(state.executing==null&&state.queueRemaining===0)state.running=null;
+      // The node now running, by title, for progress displays (execution ids of subgraph nodes look like "12:5").
+      let title=null;try{const id=String(state.executing??'').split(':').pop();const node=id?root().getNodeById(id)??viewed().getNodeById(id):null;title=node?(node.title||node.type):null;}catch(ignored){}
+      state.executingTitle=title;
+    });
     source.addEventListener('execution_start', event => { state.running=event.detail?.prompt_id??true;state.progress=null;push('execution_start',{prompt_id:event.detail?.prompt_id}); });
     for (const type of ['execution_success','execution_error','execution_interrupted']) source.addEventListener(type, event => {
       const d=event.detail||{};state.running=null;state.progress=null;state.executing=null;
@@ -318,7 +324,19 @@
     return prompt;
   }
   // ---------- simple mode: the workflow's own App-mode selection (extra.linearData), or detected key controls ----------
-  const KEY_WIDGETS=['seed','noise_seed','control_after_generate','steps','cfg','sampler_name','scheduler','denoise','width','height','batch_size','ckpt_name','unet_name','lora_name','strength_model','image'];
+  const SAMPLER_WIDGETS=['seed','noise_seed','control_after_generate','steps','cfg','sampler_name','scheduler','denoise'];
+  const SIZE_WIDGETS=['width','height','batch_size'];
+  // Model choices on any loader node (checkpoint, UNET/GGUF, CLIP, VAE, LoRA, upscale, ControlNet…) and their strengths.
+  const isLoader=node=>/load/i.test(node.type||'')||/load|加载/i.test(node.title||'');
+  const LOADER_CHOICE=/(_named*$|^model$|^ckpt|^unet|^clip|^vae|^lora|^type$)/;
+  function keyGroup(node,widget,role){
+    if(role)return role==='positive'?0:role==='negative'?1:2;
+    if(SAMPLER_WIDGETS.includes(widget.name))return 3;
+    if(SIZE_WIDGETS.includes(widget.name))return 4;
+    if(widget.name==='image'&&/LoadImage/i.test(node.type||''))return 6;
+    if(isLoader(node)&&((comboOptions(widget)&&LOADER_CHOICE.test(widget.name))||(typeof widget.value==='number'&&/strength/.test(widget.name))))return 5;
+    return -1;
+  }
   function parseEntry(entry) {
     const [first,name]=Array.isArray(entry)?entry:[];
     if(typeof first==='string'&&/^[^:]+:[^:]+:[^:]+$/.test(first)){const [graphId,nodeId,widget]=first.split(':').map(decodeURIComponent);return {graphId,nodeId,name:widget};}
@@ -333,18 +351,23 @@
   }
   function detectKeyFields() {
     const r=root(),picked=[];
-    for(const node of r._nodes){
-      if(node.mode===4||node.mode===2)continue;
+    r._nodes.forEach((node,order)=>{
+      if(node.mode===4||node.mode===2)return;
       (node.widgets||[]).forEach((widget,index)=>{
         if(linked(node,widget)||!['string','number','boolean'].includes(typeof widget.value))return;
-        const text=isTextWidget(widget),role=text?conditioningRole(r,node):null;
-        if((text&&role)||KEY_WIDGETS.includes(widget.name))picked.push(describe(r,node,widget,index));
+        const role=isTextWidget(widget)?conditioningRole(r,node):null;
+        if(isTextWidget(widget)&&!role&&!(widget.name==='image'))return;
+        const group=keyGroup(node,widget,role);if(group<0)return;
+        picked.push({group,order,index,rank:group===3?SAMPLER_WIDGETS.indexOf(widget.name):group===4?SIZE_WIDGETS.indexOf(widget.name):0,field:describe(r,node,widget,index)});
       });
-    }
-    const rank=f=>f.role==='positive'?0:f.role==='negative'?1:f.role?2:3+Math.max(0,KEY_WIDGETS.indexOf(f.name));
-    // At most two of each kind (prompts by role, other controls by name), so big workflows still show size, model and image.
+    });
+    // Sampler and size controls are listed per setting; loaders stay together per node so a LoRA's name and strength are adjacent.
+    picked.sort((a,b)=>a.group-b.group||(a.group===3||a.group===4?a.rank-b.rank||a.order-b.order:a.order-b.order||a.index-b.index));
     const seen=new Map();
-    return picked.sort((a,b)=>rank(a)-rank(b)).filter(f=>{const kind=f.role?'text-'+f.role:f.name,n=(seen.get(kind)||0)+1;seen.set(kind,n);return n<=(f.role==='mixed'?1:2);}).slice(0,24);
+    return picked.filter(p=>{
+      const kind=p.group<=2?'text-'+p.group:p.group===5?'loader':p.field.name,n=(seen.get(kind)||0)+1;seen.set(kind,n);
+      return n<=(p.group===2?1:p.group===5?24:p.group<=1?3:2);
+    }).map(p=>p.field).slice(0,48);
   }
   function simpleFields() {
     const data=root().extra?.linearData,entries=Array.isArray(data?.inputs)?data.inputs:[];

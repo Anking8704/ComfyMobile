@@ -101,6 +101,16 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
        footer:document.querySelector('.simple-footer').getBoundingClientRect().bottom<=innerHeight+1,image:!document.querySelector('#simple-image').hidden,label:document.querySelector('#simple-result-label').textContent,src:document.querySelector('#simple-image').src.slice(0,80)};})()`);if(simple.cards>0)break;}
    if(!simple.open||!/正向/.test(simple.text)||!/种子/.test(simple.text)||!/宽度/.test(simple.text)||simple.overflow||!simple.footer)throw Error(name+': simple mode '+JSON.stringify(simple));
    await shot(name+'-simple.png');
+   // Progress panel: simulated server events go through the real frontend's event bus to the adapter.
+   await evaluate(`(()=>{const w=document.querySelector('#editor').contentWindow,api=w.comfyAPI.api.api,app=w.comfyAPI.app.app;
+     const k=app.graph._nodes.find(n=>n.type==='KSampler');const fire=(t,d)=>api.dispatchEvent(new CustomEvent(t,{detail:d}));
+     fire('execution_start',{prompt_id:'smoke'});fire('status',{exec_info:{queue_remaining:2}});fire('executing',{node:String(k.id),prompt_id:'smoke'});fire('progress',{value:5,max:20,prompt_id:'smoke',node:String(k.id)});})()`);
+   let progress;for(let i=0;i<20;i++){await sleep(250);progress=await evaluate(`({shown:!document.querySelector('#simple-progress').hidden,stage:document.querySelector('#simple-stage').textContent,steps:document.querySelector('#simple-steps').textContent,bar:document.querySelector('#simple-bar').style.width})`);if(progress.shown&&progress.steps.includes('5 / 20'))break;}
+   if(!progress.shown||!/K采样器|KSampler/.test(progress.stage)||!progress.steps.includes('第 5 / 20 步 · 25%')||!/后面还有 1 个任务/.test(progress.steps)||progress.bar!=='25%')throw Error(name+': progress panel '+JSON.stringify(progress));
+   await shot(name+'-progress.png');
+   await evaluate(`(()=>{const api=document.querySelector('#editor').contentWindow.comfyAPI.api.api;api.dispatchEvent(new CustomEvent('execution_success',{detail:{prompt_id:'smoke'}}));api.dispatchEvent(new CustomEvent('status',{detail:{exec_info:{queue_remaining:0}}}));})()`);
+   let hidden=false;for(let i=0;i<20&&!hidden;i++){await sleep(250);hidden=await evaluate(`document.querySelector('#simple-progress').hidden`);}
+   if(!hidden)throw Error(name+': progress panel should hide when the queue is empty');
    await evaluate(`[...document.querySelectorAll('#simple-fields .control')].find(c=>/正向/.test(c.textContent)).click()`);
    let promptOpen=false;for(let i=0;i<15&&!promptOpen;i++){await sleep(200);promptOpen=await evaluate(`!document.querySelector('#prompt').hidden`);}
    if(!promptOpen)throw Error(name+': simple mode prompt card did not open the editor');
@@ -109,7 +119,7 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    await evaluate('CM.showCanvas()');
    report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary,simple:simple.text});
   }
-  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode'];
+  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode','simple mode shows the running node, step bar, percentage and queue, and hides it when done'];
   fs.writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
  }catch(error){
   if(evaluate){try{await send('Page.captureScreenshot',{format:'png'}).then(r=>fs.writeFileSync(path.join(out,'failure.png'),Buffer.from(r.data,'base64')));}catch{}}

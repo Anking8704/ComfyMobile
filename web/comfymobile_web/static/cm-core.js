@@ -148,9 +148,10 @@ window.CM = (() => {
       const r = await CM.call('drainEvents'); if (!r.ok) return;
       const state = r.state || {};
       const busy = state.running != null || state.queueRemaining > 0;
+      emit('state', state, busy);
       if (busy !== CM.running) { CM.running = busy; emit('running', busy); }
       if (state.progress?.max > 0) {
-        CM.progressText = `采样 ${state.progress.value} / ${state.progress.max}` + (state.queueRemaining > 1 ? ` · 排队 ${state.queueRemaining - 1}` : '');
+        CM.progressText = (state.executingTitle ? state.executingTitle + ' · ' : '') + `采样 ${state.progress.value} / ${state.progress.max}` + (state.queueRemaining > 1 ? ` · 排队 ${state.queueRemaining - 1}` : '');
         CM.chip(CM.progressText); emit('progress', CM.progressText);
       }
       if (state.previewSeq !== previewSeq && Date.now() - previewAt > 900) {
