@@ -34,6 +34,8 @@ final class EditorView extends FrameLayout {
         void editorCrashed(EditorView view);
         void editorFailed(EditorView view);
         void editorDownload(String path,String filename);
+        /** A same-server link the page tried to open in place of the editor (for example an image opened "in a new tab"). */
+        void editorLink(Uri url);
         void editorTouched();
     }
     private static final List<String> METHODS=Arrays.asList("snapshot","fields","readField","writeField","command","drainEvents","preview");
@@ -72,7 +74,13 @@ final class EditorView extends FrameLayout {
         }catch(Exception e){throw new IllegalStateException("缺少编辑器适配资源",e);}
         web.setWebViewClient(new WebViewClient(){
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
-                if(server.owns(req.getUrl().toString()))return false;
+                if(server.owns(req.getUrl().toString())){
+                    // This WebView has no tabs: a link meant for a new tab would replace the editor page itself.
+                    String path=req.getUrl().getPath();
+                    boolean editorPage=path==null||path.isEmpty()||path.equals("/");
+                    if(req.isForMainFrame()&&!editorPage&&loads>0){host.editorLink(req.getUrl());return true;}
+                    return false;
+                }
                 if(req.isForMainFrame()) {
                     String scheme=req.getUrl().getScheme();
                     if("https".equals(scheme)||"http".equals(scheme)) {

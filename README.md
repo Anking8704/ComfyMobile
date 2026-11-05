@@ -1,4 +1,4 @@
-# ComfyMobile 0.4.2
+# ComfyMobile 0.4.3
 
 连接家中电脑 ComfyUI 的安卓客户端，另附 iPad / 平板网页版。电脑运行现有模型和节点，手机或 iPad 编辑工作流、输入提示词、出图、查看任务和保存原图。安卓需 Android 10 或以上，以及较新的系统 Android WebView。
 
@@ -6,7 +6,7 @@
 
 ## 安装与连接（安卓）
 
-1. 把 `output/ComfyMobile-0.4.2.apk` 传到手机安装；或者电脑装好网页版后，用手机浏览器打开 `http://电脑地址:8188/comfymobile/`，在“更多”里下载安卓安装包。已装旧版直接覆盖安装，签名相同，草稿和收藏保留。
+1. 把 `output/ComfyMobile-0.4.3.apk` 传到手机安装；或者电脑装好网页版后，用手机浏览器打开 `http://电脑地址:8188/comfymobile/`，在“更多”里下载安卓安装包。已装旧版直接覆盖安装，签名相同，草稿和收藏保留。
 2. 手机和电脑连接同一个 Wi-Fi，电脑保持开机。
 3. 在绘世启动器打开“高级选项 → 监听设置”，开启“开放远程连接”，端口保留 `8188`（或启动参数 `--listen 0.0.0.0 --port 8188`），修改后重启 ComfyUI。
 4. 打开 APP：点“自动查找局域网中的电脑”，或手动填写地址（例如 `http://192.0.2.10:8188`）后点“检测并连接”。最近连接过的电脑会列在上方，点一下即可切换。手机在用流量时，APP 会直接提示先连 Wi-Fi。
@@ -89,7 +89,7 @@ node .\scripts\smoke-adapter.cjs
 node .\scripts\smoke-web.cjs
 ```
 
-输出为 `output/ComfyMobile-0.4.2.apk`。本版验证记录见 `docs/v0.4.0-verification.md`。提示词插入、权重、标签和收藏合并规则由 `tests/prompt-cases.tsv` 与 `tests/merge-cases.tsv` 同时检查 Java 与网页两套实现。
+输出为 `output/ComfyMobile-0.4.3.apk`。本版验证记录见 `docs/v0.4.0-verification.md`。提示词插入、权重、标签和收藏合并规则由 `tests/prompt-cases.tsv` 与 `tests/merge-cases.tsv` 同时检查 Java 与网页两套实现。
 
 ## 技术资料
 

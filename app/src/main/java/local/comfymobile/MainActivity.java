@@ -200,6 +200,15 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     @Override public void editorFailed(EditorView view){if(view==editor&&page==PAGE_CANVAS)showPage(PAGE_CANVAS);}
     @Override public void editorDownload(String path,String filename){saveFromServer(path,filename);}
+    @Override public void editorLink(Uri url){
+        String path=url.getPath()==null?"":url.getPath(),name=url.getQueryParameter("filename");
+        if(path.endsWith("/view")&&name!=null){
+            JSONObject output=NodePanel.args("filename",name,"subfolder",url.getQueryParameter("subfolder")==null?"":url.getQueryParameter("subfolder"),
+                "type",url.getQueryParameter("type")==null?"output":url.getQueryParameter("type"));
+            ResultsView.open(this,output);return;
+        }
+        try{startActivity(new Intent(Intent.ACTION_VIEW,url));}catch(Exception e){message("无法打开链接");}
+    }
     @Override public void editorTouched(){if(menu!=null&&menu.isOpen())menu.close();}
 
     // ---------------- pages ----------------
@@ -207,6 +216,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
         if(editor==null){showConnection();return;}
         if((index==PAGE_PROMPT||index==PAGE_TASKS||index==PAGE_GALLERY)&&(page==PAGE_CANVAS||page==PAGE_SIMPLE))returnPage=page;
         if(index==PAGE_CANVAS||index==PAGE_SIMPLE)prefs.edit().putInt("start_page",index).apply();
+        if(index!=PAGE_CANVAS)agentReturnsToSimple=false;
         Ui.hideKeyboard(this,root);page=index;body.removeAllViews();results=null;simple=null;menu=null;workflowPage=null;
         for(int i=0;i<nav.getChildCount();i++)((Button)nav.getChildAt(i)).setTextColor(NAV_PAGES[i]==index?Ui.TEAL:Ui.MUTED);
         if(editor.getParent()!=null)((ViewGroup)editor.getParent()).removeView(editor);
@@ -458,12 +468,15 @@ public final class MainActivity extends Activity implements EditorView.Host {
     /** Opens the ComfyUI-AgentLink chat inside the editor page; it lives on the canvas, so simple mode switches there first. */
     void openAgent(){
         if(editor==null)return;
+        // Opened from simple mode: closing the chat returns there.
+        agentReturnsToSimple=page==PAGE_SIMPLE;
         if(page!=PAGE_CANVAS)showPage(PAGE_CANVAS);
         editor.command("agent",NodePanel.args("action","open"),r->{if(!r.optBoolean("ok"))report(r);else setAgentOpen(true);});
     }
-    private boolean agentOpen=false;
+    private boolean agentOpen=false,agentReturnsToSimple=false;
     private void setAgentOpen(boolean open){
         if(open==agentOpen)return;agentOpen=open;
+        if(!open&&agentReturnsToSimple&&page==PAGE_CANVAS){agentReturnsToSimple=false;showPage(PAGE_SIMPLE);return;}
         if(menu!=null)menu.setAgentOpen(open);
         // Android 10 ignores adjustResize in immersive mode, so the keyboard would cover the chat box; show the bars while chatting.
         if(Build.VERSION.SDK_INT<30&&page==PAGE_CANVAS)fullScreen(!open);
@@ -559,6 +572,8 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     @Override protected void onPause(){
         super.onPause();active=false;eventEpoch++;handler.removeCallbacks(eventTick);handler.removeCallbacks(tick);prompt.persist();
+        // Keeps cookies such as the AI assistant's phone pairing even if the system ends the app right after.
+        try{android.webkit.CookieManager.getInstance().flush();}catch(Exception ignored){}
         if(editor!=null)editor.web.onPause();
         if(running&&server!=null&&prefs.getBoolean("notify",true))GenerationWatch.start(this,server.origin());
     }

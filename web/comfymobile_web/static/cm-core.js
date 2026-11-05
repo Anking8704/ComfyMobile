@@ -151,6 +151,8 @@ window.CM = (() => {
       emit('state', state, busy);
       // While the AI assistant's chat is open, the handle and progress chip step aside so they do not cover it.
       document.body.classList.toggle('agent-open', !!state.agentOpen);
+      if (agentWasOpen && !state.agentOpen && agentReturnsToSimple) { agentReturnsToSimple = false; CM.showSimple?.(); }
+      agentWasOpen = !!state.agentOpen;
       if (busy !== CM.running) { CM.running = busy; emit('running', busy); }
       if (state.progress?.max > 0) {
         CM.progressText = (state.executingTitle ? state.executingTitle + ' · ' : '') + `采样 ${state.progress.value} / ${state.progress.max}` + (state.queueRemaining > 1 ? ` · 排队 ${state.queueRemaining - 1}` : '');
@@ -188,7 +190,10 @@ window.CM = (() => {
   };
   CM.postJson = (path, body) => CM.api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   /** Opens the ComfyUI-AgentLink chat inside the editor; it lives on the canvas, so other pages give way first. */
+  let agentReturnsToSimple = false, agentWasOpen = false;
   CM.openAgent = async () => {
+    // Opened from simple mode: closing the chat returns there.
+    agentReturnsToSimple = !$('#simple').hidden;
     CM.showCanvas?.();
     const r = await CM.command('agent', { action: 'open' });
     if (CM.report(r)) document.body.classList.add('agent-open');
