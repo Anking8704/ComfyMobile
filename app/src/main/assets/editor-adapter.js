@@ -379,6 +379,10 @@
       return n<=(p.group===2?1:p.group===5?24:p.group<=1?3:2);
     }).map(p=>p.field).slice(0,48);
   }
+  // Named sets of parameter values (size, steps, sampler, models…), kept in the workflow file so every device sees them.
+  function presetList() { return (root().extra?.comfymobile?.presets || []).filter(p => p && typeof p.name === 'string' && Array.isArray(p.values)); }
+  function savePresets(list) { const r = root(); r.extra = r.extra || {}; r.extra.comfymobile = { ...(r.extra.comfymobile || {}), presets: list }; track(); }
+  const presetSummary = () => presetList().map(p => ({ name: p.name, count: p.values.length }));
   function simpleFields() {
     const data=root().extra?.linearData,entries=Array.isArray(data?.inputs)?data.inputs:[];
     const chosen=entries.map(parseEntry).filter(Boolean).map(resolveEntry).filter(Boolean);
@@ -587,6 +591,26 @@
         if(want!==open)launch.click();
         return {ok:true,open:!win.hidden};
       }
+      case 'presets':return {ok:true,presets:presetSummary()};
+      case 'savePreset': {
+        const name=String(args.name||'').trim();if(!name)throw new Error('请给预设起个名字');
+        const values=(args.targets||[]).map(target=>{const {graph,node,widget}=lookup(target);
+          if(isTextWidget(widget)||comboOptions(widget)&&/LoadImage/i.test(node.type||'')&&widget.name==='image')return null;
+          return {graphId:graph===root()?null:String(graph.id),nodeId:node.id,name:widget.name,value:widget.value};}).filter(Boolean);
+        if(!values.length)throw new Error('没有可保存的参数（提示词和输入图片不放进预设）');
+        savePresets([...presetList().filter(p=>p.name!==name),{name,values}]);
+        return {ok:true,presets:presetSummary()};
+      }
+      case 'applyPreset': {
+        const preset=presetList().find(p=>p.name===args.name);if(!preset)throw new Error('找不到这个预设');
+        let applied=0,skipped=0;
+        for(const v of preset.values){
+          const field=resolveEntry({graphId:v.graphId,nodeId:v.nodeId,name:v.name});
+          try{if(!field||field.linked||typeof field.value!==typeof v.value)throw new Error('changed');write(field.target,v.value,false);applied++;}catch(ignored){skipped++;}
+        }
+        return {ok:true,applied,skipped};
+      }
+      case 'deletePreset':savePresets(presetList().filter(p=>p.name!==args.name));return {ok:true,presets:presetSummary()};
       case 'simple':return simpleFields();
       case 'allFields':return {ok:true,fields:allGraphs().flatMap(g=>fieldsOf(g,false)).filter(x=>!x.linked)};
       case 'setSimple': {

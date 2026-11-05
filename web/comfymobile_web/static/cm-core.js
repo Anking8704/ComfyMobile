@@ -198,6 +198,18 @@ window.CM = (() => {
     const r = await CM.command('agent', { action: 'open' });
     if (CM.report(r)) document.body.classList.add('agent-open');
   };
+  /** Puts a generated result into a LoadImage node so the next run edits it; outputs are referenced as "name [output]". */
+  CM.useAsInput = async output => {
+    if (!output) return;
+    const type = output.type || 'output', value = `${output.subfolder ? output.subfolder + '/' : ''}${output.filename}${type === 'input' ? '' : ` [${type}]`}`;
+    const r = await CM.command('allFields'); if (!CM.report(r)) return;
+    const loaders = r.fields.filter(f => f.name === 'image' && /LoadImage/.test(f.nodeType) && f.options);
+    if (!loaders.length) { CM.toast('当前工作流没有“加载图像”节点'); return; }
+    const pick = loaders.length === 1 ? { field: loaders[0] } : await CM.choose('设为哪个节点的输入图？', loaders.map(f => ({ label: `${f.nodeTitle} · #${f.target.nodeId}`, sub: '当前：' + f.value, field: f })));
+    if (!pick) return;
+    const w = await CM.command('widget', { target: pick.field.target, value });
+    if (CM.report(w)) { CM.toast(`已设为“${pick.field.nodeTitle}”的输入图`); CM.refreshTitle?.(); CM.reloadSimple?.(); }
+  };
   CM.interrupt = async () => { try { await CM.postJson('/interrupt', {}); CM.toast('已请求电脑停止当前生成'); } catch (e) { CM.toast('停止失败：' + e.message); } };
   CM.mediaUrl = (o, preview) => `/api/view?${new URLSearchParams({ filename: o.filename, subfolder: o.subfolder || '', type: o.type || 'output', ...(preview ? { preview: 'webp' } : {}) })}`;
   CM.isVideo = name => /\.(mp4|m4v|webm|mov)$/i.test(name || '');

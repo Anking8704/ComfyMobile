@@ -18,6 +18,9 @@ final class ZoomImage extends ImageView {
     private final ScaleGestureDetector scaler;
     private final GestureDetector gestures;
     private float fitScale=1;
+    interface Swipe{void swiped(int direction);}
+    private Swipe onSwipe;
+    void setOnSwipe(Swipe swipe){onSwipe=swipe;}
 
     ZoomImage(Context c){
         super(c);setScaleType(ScaleType.MATRIX);setBackgroundColor(0xFF000000);
@@ -27,6 +30,11 @@ final class ZoomImage extends ImageView {
         gestures=new GestureDetector(c,new GestureDetector.SimpleOnGestureListener(){
             @Override public boolean onDown(MotionEvent e){return true;}
             @Override public boolean onScroll(MotionEvent a,MotionEvent b,float dx,float dy){matrix.postTranslate(-dx,-dy);clamp();return true;}
+            // A fast horizontal fling at normal zoom moves to the next or previous result.
+            @Override public boolean onFling(MotionEvent a,MotionEvent b,float vx,float vy){
+                if(onSwipe==null||scale()>fitScale*1.05f||Math.abs(vx)<800||Math.abs(vx)<Math.abs(vy)*1.5f)return false;
+                onSwipe.swiped(vx<0?1:-1);return true;
+            }
             @Override public boolean onDoubleTap(MotionEvent e){
                 float target=scale()>fitScale*1.5f?fitScale:fitScale*3;zoomBy(target/scale(),e.getX(),e.getY());return true;
             }

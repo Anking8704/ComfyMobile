@@ -359,3 +359,19 @@ test('a chat window AgentLink restores by itself after load is closed until the 
   win.hidden=false;await f.bridge.drainEvents();assert.equal(win.hidden,true);
   await f.bridge.command('agent',{action:'open'});await f.bridge.drainEvents();assert.equal(win.hidden,false);
 });
+test('parameter presets are stored in the workflow and reapplied, without prompt text',async()=>{
+  const {f,sampler}=linkedFixture();f.graph.extra={};
+  const fields=(await f.bridge.command('nodes',{})).fields;
+  const cfg=fields.find(x=>x.name==='cfg'),text=fields.find(x=>x.name==='text');
+  const saved=await f.bridge.command('savePreset',{name:'人像',targets:[cfg.target,text.target]});
+  assert.equal(saved.ok,true);assert.equal(saved.presets[0].count,1);
+  assert.equal(JSON.stringify(f.graph.extra.comfymobile.presets[0].values.map(v=>v.name)),'["cfg"]');
+  sampler.widgets[1].value=3;
+  const r=await f.bridge.command('applyPreset',{name:'人像'});
+  assert.equal(r.applied,1);assert.equal(sampler.widgets[1].value,7);
+  assert.equal((await f.bridge.command('deletePreset',{name:'人像'})).presets.length,0);
+});
+test('a preset whose node was removed skips that value instead of writing elsewhere',async()=>{
+  const {f}=linkedFixture();f.graph.extra={comfymobile:{presets:[{name:'旧',values:[{graphId:null,nodeId:99,name:'cfg',value:5}]}]}};
+  const r=await f.bridge.command('applyPreset',{name:'旧'});assert.equal(r.applied,0);assert.equal(r.skipped,1);
+});

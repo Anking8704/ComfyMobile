@@ -8,7 +8,7 @@
     vae_name: 'VAE', clip_name: 'CLIP 模型', clip_name1: 'CLIP 模型 1', clip_name2: 'CLIP 模型 2', type: 'CLIP 类型', model_name: '模型', strength_clip: 'LoRA CLIP 强度', upscale_model_name: '放大模型', control_net_name: 'ControlNet' };
   const SEED_MODES = { fixed: '固定', increment: '递增', decrement: '递减', randomize: '每次随机' };
   const SIZES = [[1024, 1024], [832, 1216], [1216, 832], [768, 1344], [1344, 768], [512, 768], [768, 512]];
-  let fields = [], source = 'auto', latest = null, uploadTarget = null;
+  let fields = [], source = 'auto', latest = null, uploadTarget = null, presets = [];
   const label = f => CM.roleLabel(f) + (NAMES[f.name] || f.label || f.name);
 
   CM.showSimple = () => {
@@ -22,6 +22,7 @@
     if (!r.ok) { $('#simple-status').textContent = '正在等待电脑编辑器加载…'; if (attempt < 40) setTimeout(() => reload(attempt + 1), 1200); return; }
     $('#simple-status').textContent = CM.running ? CM.progressText : '';
     source = r.source; fields = r.fields; render();
+    const p = await CM.command('presets'); if (p.ok) { presets = p.presets; render(); }
   }
   CM.reloadSimple = () => reload();
   CM.on('editorReady', () => reload());
@@ -29,6 +30,7 @@
   function render() {
     const box = $('#simple-fields'); box.replaceChildren();
     if (!fields.length) { box.insertAdjacentHTML('beforeend', '<p class="muted">这个工作流里没有识别到常用参数。点右上角“⋯ → 选择显示的参数”自己挑选。</p>'); return; }
+    box.append(presetRow());
     box.insertAdjacentHTML('beforeend', `<p class="muted small">${source === 'workflow' ? '显示的是此工作流保存的参数选择' : '自动识别的关键参数 · 可在“⋯”中自定义'}</p>`);
     let width = null, height = null;
     for (const f of fields) {
@@ -36,6 +38,31 @@
       if (f.name === 'width') width = f; if (f.name === 'height') height = f;
       if (width && height && String(width.target.nodeId) === String(height.target.nodeId)) { box.append(sizes(width, height)); width = height = null; }
     }
+  }
+  // ---------- presets: named parameter sets saved in the workflow ----------
+  function presetRow() {
+    const row = document.createElement('div'); row.className = 'scroll-row presets';
+    for (const p of presets) row.append(CM.button(p.name, () => applyPreset(p.name)));
+    row.append(CM.button('＋ 存为预设', savePreset));
+    return row;
+  }
+  async function savePreset() {
+    const name = await CM.promptText('把当前参数存为预设（提示词和输入图片不放进预设；同名会覆盖）', '', '例如：竖图人像', 'text');
+    if (name == null) return;
+    const r = await CM.command('savePreset', { name: name.trim(), targets: fields.map(f => f.target) });
+    if (CM.report(r)) { presets = r.presets; render(); CM.refreshTitle?.(); CM.toast('预设已保存'); }
+  }
+  async function applyPreset(name) {
+    const r = await CM.command('applyPreset', { name }); if (!CM.report(r)) return;
+    CM.toast(`已应用“${name}”${r.skipped ? `，${r.skipped} 项因节点已变化而跳过` : ''}`); CM.refreshTitle?.(); reload();
+  }
+  async function managePresets() {
+    if (!presets.length) { savePreset(); return; }
+    const pick = await CM.choose('参数预设', [...presets.map(p => ({ label: p.name, sub: `${p.count} 项`, name: p.name })), { label: '＋ 存为新预设', save: true }], { search: false });
+    if (!pick) return; if (pick.save) { savePreset(); return; }
+    const act = await CM.ask(null, ['应用', '删除'], pick.name);
+    if (act === 0) applyPreset(pick.name);
+    else if (act === 1) { const r = await CM.command('deletePreset', { name: pick.name }); if (CM.report(r)) { presets = r.presets; render(); CM.refreshTitle?.(); } }
   }
   function card(f) {
     const el = document.createElement('div'); el.className = 'card control';
@@ -46,7 +73,9 @@
     const el = card(f);
     if (f.name === 'image' && /LoadImage/.test(f.nodeType)) {
       const img = document.createElement('img'); img.className = 'input-image'; img.alt = f.value;
-      if (f.value) { const i = f.value.lastIndexOf('/'); img.src = CM.mediaUrl({ filename: f.value.slice(i + 1), subfolder: i > 0 ? f.value.slice(0, i) : '', type: 'input' }, true); }
+      // "name.png [output]" refers to a generated result used as input (see CM.useAsInput).
+      if (f.value) { const m = /^(.*) \[(output|temp|input)\]$/.exec(f.value), plain = m ? m[1] : f.value, i = plain.lastIndexOf('/');
+        img.src = CM.mediaUrl({ filename: plain.slice(i + 1), subfolder: i > 0 ? plain.slice(0, i) : '', type: m ? m[2] : 'input' }, true); }
       const row = document.createElement('div'); row.className = 'row';
       row.append(CM.button('相册 / 拍照', () => { uploadTarget = f; $('#simple-upload').click(); }, true));
       if (f.options?.length) row.append(CM.button('电脑上的图片', () => CM.editField(f, render)));
@@ -104,7 +133,7 @@
     const pick = await CM.choose('简洁模式', [
       { label: '选择显示的参数…', run: customize }, { label: '恢复自动识别', run: () => save([]) },
       { label: '提示词编辑页', run: () => CM.showPrompt() }, { label: '任务', run: () => CM.showResults('tasks') }, { label: '图库', run: () => CM.showResults('gallery') },
-      { label: '工作流（保存 / 打开）', run: CM.workflowMenu }, { label: '刷新参数', run: () => reload() },
+      { label: '工作流（保存 / 打开）', run: CM.workflowMenu }, { label: '刷新参数', run: () => reload() }, { label: '参数预设…', run: managePresets },
     ], { search: false });
     pick?.run();
   }

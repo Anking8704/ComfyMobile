@@ -127,6 +127,29 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    await evaluate(`(()=>{const api=document.querySelector('#editor').contentWindow.comfyAPI.api.api;api.dispatchEvent(new CustomEvent('execution_success',{detail:{prompt_id:'smoke'}}));api.dispatchEvent(new CustomEvent('status',{detail:{exec_info:{queue_remaining:0}}}));})()`);
    let hidden=false;for(let i=0;i<20&&!hidden;i++){await sleep(250);hidden=await evaluate(`document.querySelector('#simple-progress').hidden`);}
    if(!hidden)throw Error(name+': progress panel should hide when the queue is empty');
+   // Presets: save the current parameters, change one, apply the preset, and the value comes back.
+   await evaluate(`[...document.querySelectorAll('#simple-fields .presets button')].find(b=>b.textContent.includes('存为预设')).click()`);await sleep(300);
+   await evaluate(`(()=>{const i=document.querySelector('#modal input');i.value='测试预设';document.querySelector('#modal .buttons .primary').click();})()`);await sleep(800);
+   const preset=await evaluate(`(async()=>{const w=document.querySelector('#editor').contentWindow,app=w.comfyAPI.app.app,k=app.graph._nodes.find(n=>n.type==='KSampler'),steps=k.widgets.find(x=>x.name==='steps');
+     const before=steps.value;steps.value=before+7;
+     const b=[...document.querySelectorAll('#simple-fields .presets button')].find(x=>x.textContent==='测试预设');if(!b)return {missing:true};b.click();
+     await new Promise(r=>setTimeout(r,800));return {before,after:steps.value,stored:(app.rootGraph.extra.comfymobile?.presets||[]).map(p=>p.name)};})()`);
+   if(preset.missing||preset.after!==preset.before||!preset.stored.includes('测试预设'))throw Error(name+': presets '+JSON.stringify(preset));
+   // A result becomes the input image of the LoadImage node.
+   const input=await evaluate(`(async()=>{const w=document.querySelector('#editor').contentWindow,app=w.comfyAPI.app.app,L=w.LiteGraph;
+     let n=app.graph._nodes.find(x=>x.type==='LoadImage');if(!n){n=L.createNode('LoadImage');n.pos=[900,800];app.graph.add(n);}
+     await CM.useAsInput({filename:'ComfyUI_00123_.png',subfolder:'',type:'output'});await new Promise(r=>setTimeout(r,500));
+     return n.widgets.find(x=>x.name==='image').value;})()`);
+   if(input!=='ComfyUI_00123_.png [output]')throw Error(name+': use as input '+JSON.stringify(input));
+   // The viewer swipes through the list it was opened from.
+   await evaluate(`CM.openOutput({filename:'ComfyUI_00123_.png',type:'output'},[{filename:'ComfyUI_00123_.png',type:'output'},{filename:'ComfyUI_00122_.png',type:'output'}])`);await sleep(400);
+   const sr=await evaluate(`(()=>{const r=document.querySelector('#viewer-stage').getBoundingClientRect();return [r.left+r.width*0.75,r.left+r.width*0.25,r.top+r.height/2];})()`);
+   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:sr[0],y:sr[2]}]});
+   for(let i=1;i<=6;i++){await sleep(20);await send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:sr[0]+(sr[1]-sr[0])*i/6,y:sr[2]}]});}
+   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await sleep(400);
+   const swiped=await evaluate(`document.querySelector('#viewer-hint').textContent`);
+   if(!swiped.startsWith('2 / 2'))throw Error(name+': viewer swipe '+swiped);
+   await evaluate(`document.querySelector('[data-act="close-viewer"]').click()`);
    await evaluate(`[...document.querySelectorAll('#simple-fields .control')].find(c=>/正向/.test(c.textContent)).click()`);
    let promptOpen=false;for(let i=0;i<15&&!promptOpen;i++){await sleep(200);promptOpen=await evaluate(`!document.querySelector('#prompt').hidden`);}
    if(!promptOpen)throw Error(name+': simple mode prompt card did not open the editor');
@@ -135,7 +158,7 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    await evaluate('CM.showCanvas()');
    report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary,simple:simple.text,agent:agentCheck});
   }
-  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode','simple mode shows the running node, step bar, percentage and queue, and hides it when done'];
+  report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode','simple mode shows the running node, step bar, percentage and queue, and hides it when done','parameter presets save and reapply values','a result can become the LoadImage input (name [output])','the viewer swipes to the next result'];
   fs.writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
  }catch(error){
   if(evaluate){try{await send('Page.captureScreenshot',{format:'png'}).then(r=>fs.writeFileSync(path.join(out,'failure.png'),Buffer.from(r.data,'base64')));}catch{}}

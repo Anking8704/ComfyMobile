@@ -200,6 +200,24 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     @Override public void editorFailed(EditorView view){if(view==editor&&page==PAGE_CANVAS)showPage(PAGE_CANVAS);}
     @Override public void editorDownload(String path,String filename){saveFromServer(path,filename);}
+    /** Puts a generated result into a LoadImage node, so the next run edits it (outputs are referenced as "name [output]"). */
+    void useAsInput(JSONObject output){
+        if(editor==null||output==null)return;
+        String sub=output.optString("subfolder",""),type=output.optString("type","output");
+        String value=(sub.isEmpty()?"":sub+"/")+output.optString("filename")+(type.equals("input")?"":" ["+type+"]");
+        editor.command("allFields",new JSONObject(),r->{
+            JSONArray all=r.optJSONArray("fields");if(!r.optBoolean("ok")||all==null){report(r);return;}
+            ArrayList<JSONObject> loaders=new ArrayList<>();ArrayList<String> labels=new ArrayList<>(),details=new ArrayList<>();
+            for(int i=0;i<all.length();i++){JSONObject f=all.optJSONObject(i);
+                if(f.optString("name").equals("image")&&f.optString("nodeType").contains("LoadImage")&&!f.isNull("options")){loaders.add(f);labels.add(f.optString("nodeTitle")+" · #"+f.optJSONObject("target").optString("nodeId"));details.add("当前："+f.optString("value"));}}
+            if(loaders.isEmpty()){message("当前工作流没有“加载图像”节点");return;}
+            java.util.function.IntConsumer write=i->editor.command("widget",NodePanel.args("target",loaders.get(i).optJSONObject("target"),"value",value),w->{
+                if(!w.optBoolean("ok")){report(w);return;}
+                message("已设为“"+labels.get(i)+"”的输入图");refreshWorkflowTitle();if(simple!=null)simple.reload();
+            });
+            if(loaders.size()==1)write.accept(0);else Ui.choose(this,"设为哪个节点的输入图？",labels,details,write);
+        });
+    }
     @Override public void editorLink(Uri url){
         String path=url.getPath()==null?"":url.getPath(),name=url.getQueryParameter("filename");
         if(path.endsWith("/view")&&name!=null){

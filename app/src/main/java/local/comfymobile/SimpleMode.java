@@ -43,7 +43,7 @@ final class SimpleMode {
     private final android.widget.ProgressBar bar;
     private final ImageView result;
     private final Button generate,stop;
-    private JSONArray current=new JSONArray();
+    private JSONArray current=new JSONArray(),presets=new JSONArray();
     private String source="auto";
     private int attempts=0;
     private JSONObject latest;
@@ -138,12 +138,13 @@ final class SimpleMode {
                 return;
             }
             attempts=0;source=r.optString("source");current=r.optJSONArray("fields");if(current==null)current=new JSONArray();
-            render();loadLatest();
+            render();loadLatest();loadPresets();
         });
     }
     private void render(){
         fields.removeAllViews();
         if(current.length()==0){Ui.add(fields,Ui.text(activity,"这个工作流里没有识别到常用参数。点右上角“⋯ → 选择显示的参数”自己挑选。",14,Ui.MUTED));return;}
+        Ui.add(fields,presetRow());
         Ui.add(fields,Ui.text(activity,source.equals("workflow")?"显示的是此工作流保存的参数选择":"自动识别的关键参数 · 可在“⋯”中自定义",12,Ui.MUTED));
         JSONObject width=null,height=null;
         for(int i=0;i<current.length();i++){
@@ -251,9 +252,12 @@ final class SimpleMode {
             Ui.weighted(row,Ui.button(activity,"电脑上的图片",false,()->{ArrayList<String> l=new ArrayList<>();for(int i=0;i<options.length();i++)l.add(options.optString(i));Ui.choose(activity,"选择输入图片",l,null,i->write(f,options.optString(i)));}));}
         card.addView(row);
         if(name.isEmpty())return;
-        String sub=name.contains("/")?name.substring(0,name.lastIndexOf('/')):"",file=name.substring(name.lastIndexOf('/')+1);
+        // "name.png [output]" refers to a generated result used as input (see MainActivity.useAsInput).
+        String plain=name,kind="input";java.util.regex.Matcher m=java.util.regex.Pattern.compile("^(.*) \\[(output|temp|input)\\]$").matcher(name);
+        if(m.matches()){plain=m.group(1);kind=m.group(2);}
+        String sub=plain.contains("/")?plain.substring(0,plain.lastIndexOf('/')):"",file=plain.substring(plain.lastIndexOf('/')+1);final String type=kind;
         activity.images.execute(()->{
-            try{Bitmap b=ResultsView.decode(activity.client().bytes(MediaRef.path(file,sub,"input")+"&preview=webp",12*1024*1024),600);
+            try{Bitmap b=ResultsView.decode(activity.client().bytes(MediaRef.path(file,sub,type)+"&preview=webp",12*1024*1024),600);
                 activity.runOnUiThread(()->thumb.setImageBitmap(b));}catch(Exception ignored){}
         });
     }
@@ -288,7 +292,7 @@ final class SimpleMode {
 
     // ---------------- options ----------------
     private void options(){
-        String[] items={"选择显示的参数…","恢复自动识别","提示词编辑页","任务","图库","工作流（保存 / 打开）","刷新参数"};
+        String[] items={"选择显示的参数…","恢复自动识别","提示词编辑页","任务","图库","工作流（保存 / 打开）","刷新参数","参数预设…"};
         new AlertDialog.Builder(activity).setItems(items,(d,i)->{
             switch(i){
                 case 0:customize();break;
@@ -298,8 +302,55 @@ final class SimpleMode {
                 case 4:activity.showPage(MainActivity.PAGE_GALLERY);break;
                 case 5:activity.workflowMenu();break;
                 case 6:reload();break;
+                case 7:managePresets();break;
             }
         }).show();
+    }
+
+    // ---------------- presets: named parameter sets saved in the workflow ----------------
+    private void loadPresets(){
+        activity.editor().command("presets",new JSONObject(),r->{if(r.optBoolean("ok")){presets=r.optJSONArray("presets");if(presets==null)presets=new JSONArray();render();}});
+    }
+    private View presetRow(){
+        android.widget.HorizontalScrollView scroller=new android.widget.HorizontalScrollView(activity);scroller.setHorizontalScrollBarEnabled(false);
+        LinearLayout row=Ui.row(activity);scroller.addView(row);
+        for(int i=0;i<presets.length();i++){
+            String name=presets.optJSONObject(i).optString("name");
+            Button b=Ui.button(activity,name,false,()->applyPreset(name));
+            b.setOnLongClickListener(v->{managePresets();return true;});
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-2,Ui.dp(activity,44));p.rightMargin=Ui.dp(activity,6);row.addView(b,p);
+        }
+        row.addView(Ui.button(activity,"＋ 存为预设",false,this::savePreset),new LinearLayout.LayoutParams(-2,Ui.dp(activity,44)));
+        return scroller;
+    }
+    private void savePreset(){
+        android.widget.EditText input=Ui.input(activity,"例如：竖图人像",false);
+        new AlertDialog.Builder(activity).setTitle("把当前参数存为预设").setMessage("保存尺寸、步数、采样器、模型等当前值；提示词和输入图片不放进预设。同名预设会被覆盖。保存工作流后，其他设备也能用。")
+            .setView(input).setPositiveButton("保存",(d,w)->{
+                JSONArray targets=new JSONArray();for(int i=0;i<current.length();i++)targets.put(current.optJSONObject(i).optJSONObject("target"));
+                activity.editor().command("savePreset",NodePanel.args("name",input.getText().toString().trim(),"targets",targets),r->{
+                    if(!r.optBoolean("ok")){activity.report(r);return;}
+                    presets=r.optJSONArray("presets");render();activity.refreshWorkflowTitle();activity.message("预设已保存");
+                });
+            }).setNegativeButton("取消",null).show();
+    }
+    private void applyPreset(String name){
+        activity.editor().command("applyPreset",NodePanel.args("name",name),r->{
+            if(!r.optBoolean("ok")){activity.report(r);return;}
+            activity.message("已应用“"+name+"”"+(r.optInt("skipped")>0?"，"+r.optInt("skipped")+" 项因节点已变化而跳过":""));
+            activity.refreshWorkflowTitle();reload();
+        });
+    }
+    private void managePresets(){
+        if(presets.length()==0){savePreset();return;}
+        String[] names=new String[presets.length()];for(int i=0;i<names.length;i++)names[i]=presets.optJSONObject(i).optString("name")+"（"+presets.optJSONObject(i).optInt("count")+" 项）";
+        new AlertDialog.Builder(activity).setTitle("参数预设").setItems(names,(d,i)->{
+            String name=presets.optJSONObject(i).optString("name");
+            new AlertDialog.Builder(activity).setTitle(name).setItems(new String[]{"应用","删除"},(dd,w)->{
+                if(w==0)applyPreset(name);
+                else activity.editor().command("deletePreset",NodePanel.args("name",name),r->{if(r.optBoolean("ok")){presets=r.optJSONArray("presets");render();activity.refreshWorkflowTitle();}});
+            }).show();
+        }).setPositiveButton("存为新预设",(d,w)->savePreset()).setNegativeButton("关闭",null).show();
     }
     private void customize(){
         activity.editor().command("allFields",new JSONObject(),r->{

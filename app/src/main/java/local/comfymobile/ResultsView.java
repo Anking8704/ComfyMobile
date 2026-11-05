@@ -143,8 +143,12 @@ final class ResultsView {
     private void tap(JSONObject job){
         if(selecting){toggle(job);return;}
         String status=job.optString("status");
-        if(status.equals("output")){open(activity,job.optJSONObject("preview_output"));return;}
-        if(gallery&&job.optInt("outputs_count")<=1){open(activity,job.optJSONObject("preview_output"));return;}
+        // Outputs open in a viewer that swipes through everything currently listed here.
+        if(status.equals("output")||(gallery&&job.optInt("outputs_count")<=1)){
+            ArrayList<JSONObject> shown=new ArrayList<>();int at=0;
+            for(JSONObject item:items){JSONObject o=item.optJSONObject("preview_output");if(o==null)continue;if(item==job)at=shown.size();shown.add(o);}
+            OutputViewer.show(activity,shown,at);return;
+        }
         ArrayList<String> labels=new ArrayList<>();ArrayList<Runnable> actions=new ArrayList<>();
         if(status.equals("pending")){labels.add("取消这个排队任务");actions.add(()->deleteQueued(job.optString("id")));}
         if(status.equals("in_progress")){labels.add("停止生成");actions.add(activity::interrupt);}
@@ -264,15 +268,11 @@ final class ResultsView {
         float s=(float)max/Math.max(b.getWidth(),b.getHeight());Bitmap scaled=Bitmap.createScaledBitmap(b,Math.round(b.getWidth()*s),Math.round(b.getHeight()*s),true);
         if(scaled!=b)b.recycle();return scaled;
     }
-    /** Opens one output: images in a zoomable viewer, videos in a player. */
+    /** Opens one output: images in the swipeable viewer, videos in a player. */
     static void open(MainActivity a,JSONObject output){
         if(output==null)return;
-        String name=output.optString("filename"),path=pathOf(output);
-        if(MediaRef.isVideo(name)){playVideo(a,name,path);return;}
-        ZoomImage image=viewer(a,name,null,()->a.saveFromServer(path,name),output);
-        image.setTag(path);
-        a.worker.execute(()->{try{Bitmap b=decode(a.client().bytes(path,60*1024*1024),2600);a.runOnUiThread(()->{if(path.equals(image.getTag()))image.setImageBitmap(b);});}
-            catch(Exception e){a.runOnUiThread(()->a.message("读取原图失败："+e.getMessage()));}});
+        if(MediaRef.isVideo(output.optString("filename"))){playVideo(a,output.optString("filename"),pathOf(output));return;}
+        OutputViewer.show(a,java.util.Collections.singletonList(output),0);
     }
     static ZoomImage viewer(Activity a,String title,Bitmap bitmap,Runnable save,JSONObject shareOutput){
         Dialog dialog=new Dialog(a,android.R.style.Theme_Black_NoTitleBar_Fullscreen);
@@ -289,7 +289,7 @@ final class ResultsView {
         bar.addView(Ui.button(a,"关闭",false,dialog::dismiss));box.addView(bar);
         dialog.setContentView(box);dialog.show();return image;
     }
-    private static void playVideo(MainActivity a,String name,String path){
+    static void playVideo(MainActivity a,String name,String path){
         Dialog dialog=new Dialog(a,android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         LinearLayout box=Ui.column(a);box.setBackgroundColor(0xFF000000);Ui.applyInsets(box);
         VideoView video=new VideoView(a);FrameLayout frame=new FrameLayout(a);frame.addView(video,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));

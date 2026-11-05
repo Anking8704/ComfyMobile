@@ -43,11 +43,12 @@
     const detail = error ? `出错节点：${escapeHtml(error.node_type || '')} #${escapeHtml(String(error.node_id ?? ''))}<br>${escapeHtml(error.exception_message || '')}`
       : job.status === 'in_progress' ? escapeHtml(CM.progressText) : job.outputs_count > 1 ? `共 ${job.outputs_count} 个结果` : '';
     el.innerHTML = `${thumb(job.preview_output)}<strong class="${job.status === 'completed' ? 'ok' : job.status === 'failed' ? 'bad' : ''}">${escapeHtml(tab === 'gallery' ? new Date(job.create_time || 0).toLocaleString() : describe(job))}</strong>${detail ? `<span class="muted small">${detail}</span>` : ''}`;
-    el.onclick = () => act(job);
+    el.__output = job.preview_output; el.onclick = () => act(job);
     return el;
   }
+  const shownOutputs = () => [...$('#results-list').children].map(el => el.__output).filter(Boolean);
   async function act(job) {
-    if (tab === 'gallery' && job.outputs_count <= 1) { CM.openOutput(job.preview_output); return; }
+    if (tab === 'gallery' && job.outputs_count <= 1) { CM.openOutput(job.preview_output, shownOutputs()); return; }
     const items = [];
     if (job.status === 'pending') items.push({ label: '取消这个排队任务', run: async () => { try { await CM.postJson('/queue', { delete: [job.id] }); CM.toast('已取消'); refresh(true); } catch (e) { CM.toast('取消失败：' + e.message); } } });
     if (job.status === 'in_progress') items.push({ label: '停止生成', run: CM.interrupt });
@@ -72,7 +73,7 @@
       list.append(Object.assign(CM.button('返回任务列表', () => { openJob = null; signature = ''; refresh(true); }), { className: 'more' }));
       for (const o of outputs) {
         const el = document.createElement('div'); el.className = 'card tappable';
-        el.innerHTML = `${thumb(o)}<span class="name">${escapeHtml(o.filename)}</span>`; el.onclick = () => CM.openOutput(o); list.append(el);
+        el.innerHTML = `${thumb(o)}<span class="name">${escapeHtml(o.filename)}</span>`; el.__output = o; el.onclick = () => CM.openOutput(o, shownOutputs()); list.append(el);
       }
     } catch (e) { $('#results-summary').textContent = '读取失败：' + e.message; }
   }
@@ -104,15 +105,39 @@
       view = { scale, x: gesture.x * scale / gesture.scale, y: gesture.y * scale / gesture.scale }; apply();
     } else if (pts.length === 1 && gesture?.px != null && view.scale > 1) { view.x = gesture.x + e.clientX - gesture.px; view.y = gesture.y + e.clientY - gesture.py; apply(); }
   });
+  // A horizontal swipe at normal zoom moves through the list the viewer was opened from.
+  let swipeStart = null;
+  stage.addEventListener('pointerdown', e => { swipeStart = pointers.size === 1 && view.scale <= 1.01 ? { x: e.clientX, y: e.clientY, at: Date.now() } : null; });
+  stage.addEventListener('pointerup', e => {
+    const s = swipeStart; swipeStart = null; if (!s || view.scale > 1.01) return;
+    const dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - s.at < 600) move(dx < 0 ? 1 : -1);
+  });
   const up = e => { pointers.delete(e.pointerId); gesture = null; if (view.scale <= 1.01) reset(); };
   stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
-  CM.openOutput = output => {
-    if (!output) return; reset();
+  let viewList = [], viewIndex = 0;
+  function move(direction) {
+    const next = viewIndex + direction;
+    if (next < 0 || next >= viewList.length) { CM.toast(direction > 0 ? '已经是最后一张' : '已经是第一张'); return; }
+    show(next);
+  }
+  function show(i) {
+    viewIndex = i; const output = viewList[i]; reset();
     const url = CM.mediaUrl(output, false), isVideo = CM.isVideo(output.filename);
-    image.hidden = isVideo; video.hidden = !isVideo;
-    if (isVideo) { video.src = url; video.play().catch(() => {}); $('#viewer-hint').textContent = '视频 · 用“新标签打开”后可保存'; }
-    else { image.src = url; $('#viewer-hint').textContent = '双指或双击放大 · 长按图片可“存储到照片”'; }
+    image.hidden = isVideo; video.hidden = !isVideo; video.pause();
+    if (isVideo) { video.src = url; video.play().catch(() => {}); } else image.src = url;
+    const where = viewList.length > 1 ? `${i + 1} / ${viewList.length} · 左右滑动切换 · ` : '';
+    $('#viewer-hint').textContent = where + (isVideo ? '视频 · 用“新标签打开”后可保存' : '双指或双击放大 · 长按图片可“存储到照片”');
+    document.querySelector('[data-act="viewer-prev"]').hidden = document.querySelector('[data-act="viewer-next"]').hidden = viewList.length < 2;
+    document.querySelector('[data-act="use-as-input"]').hidden = isVideo;
     $('#viewer-open').href = url; $('#viewer').hidden = false;
+  }
+  /** Opens an output; with a list, the viewer swipes through it. */
+  CM.openOutput = (output, list) => {
+    if (!output) return;
+    viewList = (list || [output]).filter(o => o && o.filename); viewIndex = Math.max(0, viewList.indexOf(output));
+    if (!viewList.length) viewList = [output];
+    show(viewIndex);
   };
   CM.resultHandlers = {
     refresh: () => { openJob = null; signature = ''; refresh(true); },
@@ -120,6 +145,8 @@
       if (await CM.ask('取消所有还在排队的任务？正在执行的任务不受影响。', ['全部取消']) !== 0) return;
       try { await CM.postJson('/queue', { clear: true }); CM.toast('排队已清空'); refresh(true); } catch (e) { CM.toast('操作失败：' + e.message); }
     },
+    'viewer-prev': () => move(-1), 'viewer-next': () => move(1),
+    'use-as-input': () => { const o = viewList[viewIndex]; CM.resultHandlers['close-viewer'](); CM.useAsInput(o); },
     'close-viewer': () => { $('#viewer').hidden = true; image.removeAttribute('src'); video.pause(); video.removeAttribute('src'); },
   };
   CM.on('completed', () => { if (!$('#results').hidden) { signature = ''; refresh(true); } });

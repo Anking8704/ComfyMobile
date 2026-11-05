@@ -190,3 +190,6 @@ input, select { min-height: var(--tap); }
 /* AI assistant (ComfyUI-AgentLink) open inside the editor: keep the shell's own floating controls out of its way */
 body.agent-open #handle, body.agent-open #chip { display: none !important; }
 body.agent-open .toast { top: auto; bottom: calc(var(--safe-bottom) + 140px); }
+
+.presets button { min-height: 40px; }
+.viewer-bar [data-act="viewer-prev"], .viewer-bar [data-act="viewer-next"] { min-width: 48px; font-size: 22px; }
