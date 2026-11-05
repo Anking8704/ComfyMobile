@@ -92,6 +92,25 @@ public final class MainActivity extends Activity implements EditorView.Host {
         String recent=prefs.getString("server","");
         if(recent.isEmpty())showConnection();
         else{try{attach(ServerAddress.parse(recent));showPage(state==null?prefs.getInt("start_page",PAGE_CANVAS):state.getInt("page",PAGE_CANVAS));}catch(IllegalArgumentException e){showConnection();}}
+        if(state==null)openLink(getIntent());
+    }
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);openLink(intent);}
+    private boolean agentAfterSetup=false;
+    /**
+     * The AI assistant's pairing QR code (ComfyUI-AgentLink) links to http://computer:port/agentlink/pair?code=…; opened here,
+     * the app connects to that computer, pairs inside its own editor and opens the assistant.
+     */
+    private void openLink(Intent intent){
+        Uri link=intent==null||!Intent.ACTION_VIEW.equals(intent.getAction())?null:intent.getData();
+        if(link==null||link.getPath()==null||!link.getPath().startsWith("/agentlink/pair"))return;
+        intent.setData(null);
+        final ServerAddress address;
+        try{address=ServerAddress.parse(link.getScheme()+"://"+link.getEncodedAuthority());}catch(IllegalArgumentException e){message("二维码里的电脑地址无法识别");return;}
+        attach(address);showPage(PAGE_CANVAS);
+        String code=link.getQueryParameter("code");
+        editor.web.loadUrl(address.origin()+"/agentlink/pair?code="+Uri.encode(code==null?"":code)+"&next=%2F");
+        agentAfterSetup=true;setupLoads=-1;
+        message("正在与电脑上的 AI 助手配对…");
     }
     EditorView editor(){return editor;}
     PromptEditor prompt(){return prompt;}
@@ -227,6 +246,12 @@ public final class MainActivity extends Activity implements EditorView.Host {
         }
         try{startActivity(new Intent(Intent.ACTION_VIEW,url));}catch(Exception e){message("无法打开链接");}
     }
+    @Override public void editorLeft(Uri url){
+        agentAfterSetup=false;
+        message(url.getPath()!=null&&url.getPath().startsWith("/agentlink/pair")
+            ?"配对没有成功：配对码不对、用过或已过期。请在电脑的 AI 助手设置里换一个配对码再扫一次。":"正在回到编辑器");
+        handler.postDelayed(()->{if(editor!=null)editor.retry();},3500);
+    }
     @Override public void editorTouched(){if(menu!=null&&menu.isOpen())menu.close();}
 
     // ---------------- pages ----------------
@@ -346,7 +371,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
             if(!c.optBoolean("ok")){setupPending=false;return;}
             source.command("chrome",NodePanel.args("focus",!prefs.getBoolean("web_menus",false)),r->{
                 if(source!=editor)return;setupPending=false;
-                if(r.optBoolean("ok")){setupLoads=load;refreshWorkflowTitle();if(simple!=null)simple.reload();}
+                if(r.optBoolean("ok")){setupLoads=load;refreshWorkflowTitle();if(simple!=null)simple.reload();if(agentAfterSetup){agentAfterSetup=false;openAgent();}}
             });
         });
     }

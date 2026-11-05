@@ -37,6 +37,7 @@ final class EditorView extends FrameLayout {
         /** A same-server link the page tried to open in place of the editor (for example an image opened "in a new tab"). */
         void editorLink(Uri url);
         void editorTouched();
+        void editorLeft(Uri url);
     }
     private static final List<String> METHODS=Arrays.asList("snapshot","fields","readField","writeField","command","drainEvents","preview");
     final WebView web;
@@ -90,6 +91,9 @@ final class EditorView extends FrameLayout {
             }
             @Override public void onPageFinished(WebView view,String url) {
                 if(!server.owns(url)||failed)return;
+                String path=Uri.parse(url).getPath();
+                // A page other than the editor (for example a failed pairing link) is not the editor: let the activity recover.
+                if(path!=null&&!path.isEmpty()&&!path.equals("/")){host.editorLeft(Uri.parse(url));return;}
                 web.evaluateJavascript(script,null);loads++;host.status("编辑器已加载");
             }
             @Override public void onReceivedError(WebView view,WebResourceRequest req,WebResourceError error) {

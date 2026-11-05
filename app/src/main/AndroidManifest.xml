@@ -18,6 +18,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- The AI assistant's pairing QR code (ComfyUI-AgentLink): phone cameras can open it in this app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="*" />
+                <data android:pathPrefix="/agentlink/pair" />
+            </intent-filter>
         </activity>
         <service android:name=".GenerationWatch" android:exported="false" android:foregroundServiceType="dataSync" />
         <provider android:name=".ShareProvider" android:authorities="local.comfymobile.share"
