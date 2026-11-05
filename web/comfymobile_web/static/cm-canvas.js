@@ -52,7 +52,7 @@
   function actions() {
     return [
       ['开始生成', () => CM.generate(false), 'primary'], ['停止生成', CM.interrupt, CM.running ? '' : 'disabled'],
-      ['简洁模式', () => CM.showSimple()], ['提示词', () => CM.showPrompt()], ['工作流', CM.workflowMenu],
+      ['简洁模式', () => CM.showSimple()], ['提示词', () => CM.showPrompt()], ['AI 助手', CM.openAgent], ['工作流', CM.workflowMenu],
       ['节点', nodeList], ['添加', addNode], ['适应画布', async () => CM.report(await CM.command('fit'))],
       ['撤销', async () => { CM.report(await CM.command('undo')); refreshTitle(); }, 'keep'], ['重做', async () => { CM.report(await CM.command('redo')); refreshTitle(); }, 'keep'],
       ['任务', () => CM.showResults('tasks')], ['图库', () => CM.showResults('gallery')], ['原版菜单', toggleMenus], ['更多', more],
@@ -107,6 +107,7 @@
       { label: '导出工作流 JSON', run: exportWorkflow },
       { label: `画布工具条：${store.get('toolbar', true) ? '显示' : '隐藏'}`, run: () => { store.set('toolbar', !store.get('toolbar', true)); CM.applySetup(); } },
       { label: `选中节点时的工具条：${store.get('selectionToolbox', false) ? '显示' : '隐藏（避免挡住双击）'}`, run: () => { store.set('selectionToolbox', !store.get('selectionToolbox', false)); CM.applySetup(); } },
+      { label: `AI 助手自带的悬浮按钮：${store.get('agentButton', false) ? '显示' : '隐藏（从圆形菜单打开）'}`, run: () => { store.set('agentButton', !store.get('agentButton', false)); CM.applySetup(); } },
       { label: `性能模式（缩小时简化绘制）：${store.get('performance', false) ? '开' : '关'}`, run: () => { store.set('performance', !store.get('performance', false)); CM.applySetup(); } },
       { label: '刷新编辑器', run: reloadEditor },
       { label: '下载安卓版安装包', run: () => { location.href = 'ComfyMobile.apk'; } },

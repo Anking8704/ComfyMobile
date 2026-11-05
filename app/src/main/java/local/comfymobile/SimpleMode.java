@@ -58,6 +58,8 @@ final class SimpleMode {
         title=Ui.text(a,"简洁模式",14,Ui.TEXT);title.setSingleLine(true);title.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
         title.setPadding(Ui.dp(a,10),0,Ui.dp(a,6),0);title.setOnClickListener(v->a.workflowMenu());
         top.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout.LayoutParams ai=new LinearLayout.LayoutParams(-2,Ui.dp(a,44));ai.rightMargin=Ui.dp(a,6);
+        top.addView(Ui.button(a,"AI 助手",false,a::openAgent),ai);
         top.addView(Ui.button(a,"⋯",false,this::options),new LinearLayout.LayoutParams(Ui.dp(a,52),Ui.dp(a,44)));
         root.addView(top);
         status=Ui.text(a,"",12,Ui.MUTED);status.setSingleLine(true);status.setEllipsize(android.text.TextUtils.TruncateAt.END);root.addView(status);

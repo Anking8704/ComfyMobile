@@ -336,3 +336,26 @@ test('state names the node that is currently running',async()=>{
   f.listeners.get('executing')({detail:{node:'6',prompt_id:'p'}});
   assert.equal((await f.bridge.drainEvents()).state.executingTitle,'自定义文本');
 });
+function agentFixture(){
+  const f=fixture();const win={hidden:true};const launch={clicks:0,click(){this.clicks++;win.hidden=!win.hidden;}};
+  f.ctx.document.querySelector=sel=>sel==='.al-launch'?launch:sel==='.al-float'?win:null;
+  return {f,win,launch};
+}
+test('the AI assistant window opens and closes from the app and is reported in state',async()=>{
+  const {f,win}=agentFixture();
+  assert.equal((await f.bridge.command('agent',{action:'open'})).open,true);assert.equal(win.hidden,false);
+  assert.equal((await f.bridge.drainEvents()).state.agentOpen,true);
+  assert.equal((await f.bridge.command('agent',{action:'open'})).open,true);
+  assert.equal((await f.bridge.command('agent',{action:'close'})).open,false);
+  assert.equal((await f.bridge.drainEvents()).state.agentOpen,false);
+});
+test('without AgentLink installed the assistant command explains instead of failing silently',async()=>{
+  const f=fixture();const r=await f.bridge.command('agent',{action:'open'});
+  assert.equal(r.ok,false);assert.match(r.error,/AgentLink/);
+});
+test('a chat window AgentLink restores by itself after load is closed until the app opens it',async()=>{
+  const {f,win}=agentFixture();f.app.canvas.setDirty=()=>{};
+  await f.bridge.command('configure',{closeAgent:true});
+  win.hidden=false;await f.bridge.drainEvents();assert.equal(win.hidden,true);
+  await f.bridge.command('agent',{action:'open'});await f.bridge.drainEvents();assert.equal(win.hidden,false);
+});

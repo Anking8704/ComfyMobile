@@ -4,7 +4,7 @@
   const { $, store } = CM;
   const handlers = {
     ...CM.promptHandlers, ...CM.simpleHandlers, ...CM.resultHandlers,
-    'close-sheet': CM.closeSheet, stop: CM.interrupt, retry: CM.retry,
+    'close-sheet': CM.closeSheet, stop: CM.interrupt, retry: CM.retry, agent: CM.openAgent,
     // "Back" depends on the page it sits on: prompt returns to where it came from, results to the mode in use.
     back: () => {
       if (!$('#prompt').hidden) CM.leavePrompt();

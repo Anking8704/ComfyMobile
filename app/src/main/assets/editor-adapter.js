@@ -7,7 +7,17 @@
   const events = [];
   const state = { progress: null, queueRemaining: 0, running: null, executing: null, executingTitle: null, previewSeq: 0 };
   const pageId = Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-  const hidden = { toolbar: false, selection: false };
+  const hidden = { toolbar: false, selection: false, agentButton: false };
+  // ComfyUI-AgentLink (the AI chat plugin) adds a launch button and a window to the page; the app opens it from its own menu.
+  const agentParts = () => ({ launch: document.querySelector('.al-launch'), win: document.querySelector('.al-float') });
+  const agentOpen = () => { const w = agentParts().win; return !!w && !w.hidden; };
+  // AgentLink reopens its chat if it was open last time, possibly after this page's setup; on a phone it should open only
+  // from the app menu, so a window the app did not ask for is closed for a short while after load.
+  let agentQuietUntil = 0, agentRequested = false;
+  function closeUnrequestedAgent() {
+    if (agentRequested || Date.now() > agentQuietUntil || !agentOpen()) return;
+    agentParts().launch?.click();
+  }
   let serial = 0, submitting = false, hookedApi = null, submission = null, latestPreview = null, nativeDownloads = false;
   const fail = error => ({ ok: false, error: String(error?.message || error) });
   const app = () => window.comfyAPI?.app?.app || window.app;
@@ -453,12 +463,25 @@
         if(typeof args.toolbar==='boolean')hidden.toolbar=!args.toolbar;
         // On a phone the selection toolbox pops up over the node just tapped, where the second tap of a double tap lands.
         if(typeof args.selectionToolbox==='boolean')hidden.selection=!args.selectionToolbox;
+        if(typeof args.agentButton==='boolean')hidden.agentButton=!args.agentButton;
+        if(args.closeAgent){
+          try{const key='agentlink.window.v1',saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.open)localStorage.setItem(key,JSON.stringify({...saved,open:false}));}catch(ignored){}
+          agentQuietUntil=Date.now()+15000;closeUnrequestedAgent();
+        }
         let style=document.getElementById('comfymobile-style');
         if(!style){style=document.createElement('style');style.id='comfymobile-style';document.head.appendChild(style);}
-        style.textContent=(hidden.toolbar?'.graph-canvas-panel [role="toolbar"].p-buttongroup{display:none!important}':'')+(hidden.selection?'.selection-toolbox{display:none!important}':'');
+        style.textContent=(hidden.toolbar?'.graph-canvas-panel [role="toolbar"].p-buttongroup{display:none!important}':'')+(hidden.selection?'.selection-toolbox{display:none!important}':'')
+          +(hidden.agentButton?'.al-launch{display:none!important}':'')
+          // Landscape phones are wider than AgentLink's own 640px phone rule but too short for its floating window: fill the screen.
+          // The frontend's restore-menu button (shown in focus mode) sits on the chat's top-right buttons while the chat is open.
+          +'body:has(.al-float:not([hidden])) .fixed.top-0.right-0:has(.pi-bars){display:none!important}'
+          +'@media (max-height:520px){.al-float{left:0!important;top:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;border-radius:0!important;border:0!important;resize:none!important}}';
         return {ok:true};
       }
       case 'escape': {
+        // AgentLink first: its image viewer, then its chat window, so back closes what the user sees on top.
+        const lightbox=document.querySelector('.al-light');
+        if(lightbox){lightbox.remove();return {ok:true,closed:true};}
         const open='.litecontextmenu,.p-dialog-mask,.p-contextmenu,.p-popover,.p-select-overlay,.comfy-vue-node-search-container,.graphdialog,.litesearchbox';
         const had=!!document.querySelector(open);
         const target=document.activeElement&&document.activeElement!==document.body?document.activeElement:document;
@@ -466,6 +489,7 @@
         window.LiteGraph?.closeAllContextMenus?.(window);
         document.querySelectorAll('.graphdialog,.litesearchbox').forEach(d=>d.close?d.close():d.remove());
         await new Promise(r=>setTimeout(r,60));
+        if(!had&&agentOpen()){agentParts().launch?.click();return {ok:true,closed:true};}
         return {ok:true,closed:had};
       }
       case 'fit': {
@@ -555,6 +579,14 @@
         await instance.loadGraphData(graph,true,true,`历史任务 ${String(args.id).slice(0,8)}`);
         targets.clear();return {ok:true};
       }
+      case 'agent': {
+        const {launch,win}=agentParts();
+        if(!launch||!win)throw new Error('电脑上没有加载 AI 助手（ComfyUI-AgentLink）。请确认已安装该插件，并完全重启 ComfyUI');
+        const open=!win.hidden,want=args.action==='open'?true:args.action==='close'?false:args.action==='toggle'?!open:open;
+        agentRequested=want;
+        if(want!==open)launch.click();
+        return {ok:true,open:!win.hidden};
+      }
       case 'simple':return simpleFields();
       case 'allFields':return {ok:true,fields:allGraphs().flatMap(g=>fieldsOf(g,false)).filter(x=>!x.linked)};
       case 'setSimple': {
@@ -572,7 +604,7 @@
     readField:async(target)=>{try{return {ok:true,value:lookup(target).widget.value};}catch(e){return fail(e);}},
     writeField:async(target,text)=>{try{return write(target,text,true);}catch(e){return fail(e);}},
     command:async(name,args)=>{try{hook();return await command(name,args);}catch(e){return fail(e);}},
-    drainEvents:async()=>{hook();return {ok:true,events:events.splice(0),state:{...state,progress:state.progress&&{...state.progress}}};},
+    drainEvents:async()=>{hook();closeUnrequestedAgent();return {ok:true,events:events.splice(0),state:{...state,progress:state.progress&&{...state.progress},agentOpen:agentOpen()}};},
     /** The latest sampler preview, converted only when the caller does not have this sequence yet. */
     preview:async(known)=>{
       try{

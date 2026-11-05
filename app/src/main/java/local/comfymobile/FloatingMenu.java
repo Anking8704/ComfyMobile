@@ -81,17 +81,23 @@ final class FloatingMenu {
     }
 
     void setItems(Item... list){items.clear();java.util.Collections.addAll(items,list);layoutGrid();}
+    private boolean agentOpen=false;
+    /** While the AI assistant's chat covers the canvas, the handle and progress chip step aside so they do not cover it. */
+    void setAgentOpen(boolean open){
+        if(open==agentOpen)return;agentOpen=open;
+        if(open){sheet.setVisibility(View.GONE);handle.setVisibility(View.GONE);hideProgress.run();}else handle.setVisibility(View.VISIBLE);
+    }
     void setStatus(String text){status.setText(text);}
     /** The open workflow's name (and unsaved marker) shown above the actions. */
     void setTitle(String text){title.setText(text);title.setVisibility(text==null||text.isEmpty()?View.GONE:View.VISIBLE);}
-    void showPreview(Bitmap bitmap){if(bitmap==null)return;thumb.setImageBitmap(bitmap);thumb.setVisibility(View.VISIBLE);chip.setVisibility(View.VISIBLE);chip.removeCallbacks(hideProgress);chip.postDelayed(hideProgress,8000);}
+    void showPreview(Bitmap bitmap){if(bitmap==null||agentOpen)return;thumb.setImageBitmap(bitmap);thumb.setVisibility(View.VISIBLE);chip.setVisibility(View.VISIBLE);chip.removeCallbacks(hideProgress);chip.postDelayed(hideProgress,8000);}
     void setEnabled(String label,boolean enabled){disabled.put(label,!enabled);Button b=buttons.get(label);if(b!=null)b.setEnabled(enabled);}
     boolean isOpen(){return sheet.getVisibility()==View.VISIBLE;}
     void open(){layoutGrid();sheet.setVisibility(View.VISIBLE);handle.setVisibility(View.GONE);activity.menuOpened();}
     void close(){sheet.setVisibility(View.GONE);handle.setVisibility(View.VISIBLE);}
     /** Shows sampling progress over the canvas while the menu is collapsed; it fades out once updates stop. */
     void showProgress(String text){
-        progress.setText(text);chip.setVisibility(View.VISIBLE);status.setText(text);
+        progress.setText(text);status.setText(text);if(agentOpen)return;chip.setVisibility(View.VISIBLE);
         chip.removeCallbacks(hideProgress);chip.postDelayed(hideProgress,8000);
     }
 

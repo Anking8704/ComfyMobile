@@ -16,7 +16,8 @@ const server=http.createServer(async(req,res)=>{
   const route=req.url.replace(/^\/api\//,'/');
   if(req.method!=='GET') {res.writeHead(200,{'content-type':'application/json'});res.end('{}');return;}
   if(route.startsWith('/userdata')){res.writeHead(200,{'content-type':'application/json'});res.end(route.includes('?')?'[]':'{}');return;}
-  if(route==='/extensions'){res.writeHead(200,{'content-type':'application/json'});res.end('[]');return;}
+  // Only the AI assistant plugin's scripts are loaded, so its integration can be checked without every other extension.
+  if(route==='/extensions'){let list=[];try{list=(await (await fetch('http://127.0.0.1:8188/extensions')).json()).filter(p=>/AgentLink/i.test(p));}catch{}res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(list));return;}
   const response=await fetch('http://127.0.0.1:8188'+req.url);
   let data;
   if(route==='/object_info') {const all=await response.json();data=Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(all).filter(([name])=>['CLIPTextEncode','KSampler','EmptyLatentImage','SaveImage','LoadImage','CheckpointLoaderSimple'].includes(name)))));}
@@ -44,7 +45,7 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
   for(const [name,width,height] of sizes){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true});
    await send('Page.navigate',{url:`http://127.0.0.1:${port}/comfymobile/`});await sleep(1500);
-   let ready=false;for(let i=0;i<120;i++){ready=await evaluate(`(()=>{try{const w=document.querySelector('#editor').contentWindow;return !!(w.ComfyMobileEditor&&w.comfyAPI.app.app.extensionManager.focusMode);}catch{return false;}})()`);if(ready)break;await sleep(400);}
+   let ready=false;for(let i=0;i<120;i++){ready=await evaluate(`(()=>{try{const w=document.querySelector('#editor').contentWindow;return !!(w.ComfyMobileEditor&&w.comfyAPI.app.app.extensionManager.focusMode&&w.LiteGraph?.registered_node_types?.CLIPTextEncode);}catch{return false;}})()`);if(ready)break;await sleep(400);}
    if(!ready)throw Error(name+': adapter not injected or focus mode not applied');
    const setup=await evaluate(`(async()=>{
      const w=document.querySelector('#editor').contentWindow,app=w.comfyAPI.app.app,b=w.ComfyMobileEditor;
@@ -91,6 +92,21 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    const sheet=await evaluate(`(()=>{const s=document.querySelector('#sheet');const r=s.getBoundingClientRect();return {open:!s.hidden,inside:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,buttons:document.querySelectorAll('#actions button').length};})()`);
    if(!sheet.open||!sheet.inside||sheet.buttons<12)throw Error(name+': menu sheet '+JSON.stringify(sheet));
    await shot(name+'-menu.png');
+   // AI assistant from the round menu: the shell's handle steps aside while the chat is open and returns afterwards.
+   const hasAgent=await evaluate(`!!document.querySelector('#editor').contentWindow.document.querySelector('.al-launch')`);
+   let agentCheck='not installed';
+   if(hasAgent){
+     await evaluate(`[...document.querySelectorAll('#actions button')].find(b=>b.textContent==='AI 助手').click()`);
+     let open;for(let i=0;i<20;i++){await sleep(250);open=await evaluate(`(()=>{const d=document.querySelector('#editor').contentWindow.document,w=d.querySelector('.al-float');
+       return {win:!!w&&!w.hidden,body:document.body.classList.contains('agent-open'),handle:getComputedStyle(document.querySelector('#handle')).display,button:getComputedStyle(d.querySelector('.al-launch')).display};})()`);if(open.win&&open.body)break;}
+     if(!open.win||!open.body||open.handle!=='none'||open.button!=='none')throw Error(name+': AI assistant open '+JSON.stringify(open));
+     await shot(name+'-agent.png');
+     await evaluate(`document.querySelector('#editor').contentWindow.document.querySelector('.al-launch').click()`);
+     let back=false;for(let i=0;i<20&&!back;i++){await sleep(250);back=await evaluate(`!document.body.classList.contains('agent-open')&&getComputedStyle(document.querySelector('#handle')).display!=='none'`);}
+     if(!back)throw Error(name+': handle did not return after the assistant closed');
+     agentCheck='ok';
+     await touch(...setup.handle);await sleep(300);
+   }
    await evaluate(`[...document.querySelectorAll('#actions button')].find(b=>b.textContent==='图库').click()`);await sleep(1500);
    const results=await evaluate(`(()=>{const p=document.querySelector('#results');return {open:!p.hidden,summary:document.querySelector('#results-summary').textContent,overflow:document.documentElement.scrollWidth>innerWidth}})()`);
    if(!results.open||results.overflow)throw Error(name+': results page '+JSON.stringify(results));
@@ -104,8 +120,8 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    // Progress panel: simulated server events go through the real frontend's event bus to the adapter.
    await evaluate(`(()=>{const w=document.querySelector('#editor').contentWindow,api=w.comfyAPI.api.api,app=w.comfyAPI.app.app;
      const k=app.graph._nodes.find(n=>n.type==='KSampler');const fire=(t,d)=>api.dispatchEvent(new CustomEvent(t,{detail:d}));
-     fire('execution_start',{prompt_id:'smoke'});fire('status',{exec_info:{queue_remaining:2}});fire('executing',{node:String(k.id),prompt_id:'smoke'});fire('progress',{value:5,max:20,prompt_id:'smoke',node:String(k.id)});})()`);
-   let progress;for(let i=0;i<20;i++){await sleep(250);progress=await evaluate(`({shown:!document.querySelector('#simple-progress').hidden,stage:document.querySelector('#simple-stage').textContent,steps:document.querySelector('#simple-steps').textContent,bar:document.querySelector('#simple-bar').style.width})`);if(progress.shown&&progress.steps.includes('5 / 20'))break;}
+     window.__cmFire=()=>{fire('execution_start',{prompt_id:'smoke'});fire('status',{exec_info:{queue_remaining:2}});fire('executing',{node:String(k.id),prompt_id:'smoke'});fire('progress',{value:5,max:20,prompt_id:'smoke',node:String(k.id)});};window.__cmFire();})()`);
+   let progress;for(let i=0;i<20;i++){await evaluate('window.__cmFire()');await sleep(250);progress=await evaluate(`({shown:!document.querySelector('#simple-progress').hidden,stage:document.querySelector('#simple-stage').textContent,steps:document.querySelector('#simple-steps').textContent,bar:document.querySelector('#simple-bar').style.width})`);if(progress.shown&&progress.steps.includes('5 / 20'))break;}
    if(!progress.shown||!/K采样器|KSampler/.test(progress.stage)||!progress.steps.includes('第 5 / 20 步 · 25%')||!/后面还有 1 个任务/.test(progress.steps)||progress.bar!=='25%')throw Error(name+': progress panel '+JSON.stringify(progress));
    await shot(name+'-progress.png');
    await evaluate(`(()=>{const api=document.querySelector('#editor').contentWindow.comfyAPI.api.api;api.dispatchEvent(new CustomEvent('execution_success',{detail:{prompt_id:'smoke'}}));api.dispatchEvent(new CustomEvent('status',{detail:{exec_info:{queue_remaining:0}}}));})()`);
@@ -117,7 +133,7 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
    await evaluate(`document.querySelector('#prompt [data-act="back"]').click()`);await sleep(300);
    if(await evaluate(`document.querySelector('#simple').hidden`))throw Error(name+': back from the prompt editor should return to simple mode');
    await evaluate('CM.showCanvas()');
-   report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary,simple:simple.text});
+   report.sizes.push({name,viewport:setup.viewport,label:editing.label,libraryItems:editing.items,inserted:editing.english,sidebar:editing.sidebar,menuButtons:sheet.buttons,results:results.summary,simple:simple.text,agent:agentCheck});
   }
   report.ok=true;report.checks=['adapter injected into the embedded editor','original menus hidden (full-screen canvas)','single tap does not navigate','real touch double tap opens the exact field','bilingual library inserts English only','save writes back to the node','floating menu fits the screen','gallery page has no horizontal overflow','simple mode detects positive prompt, seed and size','simple mode prompt card opens the editor and back returns to simple mode','simple mode shows the running node, step bar, percentage and queue, and hides it when done'];
   fs.writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

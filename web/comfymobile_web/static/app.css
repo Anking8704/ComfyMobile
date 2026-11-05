@@ -186,3 +186,7 @@ input, select { min-height: var(--tap); }
 .simple-progress .bar > div { height: 100%; width: 0; background: var(--teal); transition: width .3s; }
 .simple-progress .bar > div.indeterminate { width: 30%; animation: cm-slide 1.2s ease-in-out infinite; }
 @keyframes cm-slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
+/* AI assistant (ComfyUI-AgentLink) open inside the editor: keep the shell's own floating controls out of its way */
+body.agent-open #handle, body.agent-open #chip { display: none !important; }
+body.agent-open .toast { top: auto; bottom: calc(var(--safe-bottom) + 140px); }

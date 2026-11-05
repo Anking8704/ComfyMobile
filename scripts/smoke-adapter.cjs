@@ -7,7 +7,8 @@ const server=http.createServer(async(req,res)=>{
   const route=req.url.replace(/^\/api\//,'/');
   if(req.method!=='GET') {res.writeHead(200,{'content-type':'application/json'});res.end('{}');return;}
   if(route.startsWith('/userdata')&&!route.includes('workflows')){res.writeHead(200,{'content-type':'application/json'});res.end(route.includes('?')?'[]':'{}');return;}
-  if(route==='/extensions'){res.writeHead(200,{'content-type':'application/json'});res.end('[]');return;}
+  // Only the AI assistant plugin's scripts are loaded, so its integration can be checked without every other extension.
+  if(route==='/extensions'){let list=[];try{list=(await (await fetch('http://127.0.0.1:8188/extensions')).json()).filter(p=>/AgentLink/i.test(p));}catch{}res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(list));return;}
   const response=await fetch('http://127.0.0.1:8188'+req.url);
   let data;
   if(route==='/object_info') {const all=await response.json();data=Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(all).filter(([name])=>['CLIPTextEncode','KSampler','EmptyLatentImage','SaveImage','CheckpointLoaderSimple'].includes(name)))));}
@@ -118,6 +119,20 @@ function stop(child){if(child)spawnSync('taskkill.exe',['/PID',String(child.pid)
     return {first:auto.fields[0]?.role,names:auto.fields.map(f=>f.name).join(','),source:saved.source,linear:JSON.stringify(app.rootGraph.extra.linearData)};})()`);
   if(simple.first!=='positive'||!/seed/.test(simple.names)||!/width/.test(simple.names)||simple.source!=='workflow'||!simple.linear.includes('"steps"'))throw Error('simple: '+JSON.stringify(simple));
   passed('simple mode detects positive prompt, seed and size, and stores choices as App-mode linearData');
+
+  // 10. The AI assistant (ComfyUI-AgentLink) opens from the app, fills a short landscape screen and closes with back.
+  const hasAgent=await evaluate(`!!document.querySelector('.al-launch')`);
+  if(hasAgent){
+    const agent=await evaluate(`(async()=>{const b=window.ComfyMobileEditor;await b.command('configure',{agentButton:false});
+      const hiddenButton=getComputedStyle(document.querySelector('.al-launch')).display==='none';
+      const opened=await b.command('agent',{action:'open'});await new Promise(r=>setTimeout(r,800));
+      const rect=document.querySelector('.al-float').getBoundingClientRect(),state=(await b.drainEvents()).state;
+      const back=await b.command('escape',{});await new Promise(r=>setTimeout(r,300));
+      return {hiddenButton,opened:opened.open,full:Math.round(rect.width)===innerWidth&&Math.round(rect.height)===innerHeight,stateOpen:state.agentOpen,
+        backClosed:back.closed,afterBack:!document.querySelector('.al-float').hidden};})()`);
+    if(!agent.hiddenButton||!agent.opened||!agent.full||!agent.stateOpen||!agent.backClosed||agent.afterBack)throw Error('AI assistant: '+JSON.stringify(agent));
+    passed('AI assistant: own button hidden, opens from the app, fills a landscape phone, reported in state, back closes it');
+  } else console.error('note: ComfyUI-AgentLink is not loaded on this computer; assistant integration not checked');
 
   // 9. Add-node list uses display names and categories.
   const types=await evaluate(`(async()=>{const r=await window.ComfyMobileEditor.command('types',{});const k=r.types.find(t=>t.type==='KSampler');return {count:r.types.length,k};})()`);

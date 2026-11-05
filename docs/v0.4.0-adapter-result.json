@@ -9,8 +9,9 @@
     "Nodes 2.0: single tap stays, double tap edits the exact field",
     "back key closes an open context menu first",
     "blob downloads are handed to the app",
-    "5 workflows listed; opening one makes it the active tab",
+    "10 workflows listed; opening one makes it the active tab",
     "simple mode detects positive prompt, seed and size, and stores choices as App-mode linearData",
+    "AI assistant: own button hidden, opens from the app, fills a landscape phone, reported in state, back closes it",
     "add-node list shows display names and categories"
   ]
 }

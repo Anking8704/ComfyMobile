@@ -214,7 +214,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
             workflowPage=new FrameLayout(this);
             workflowPage.addView(editor,new FrameLayout.LayoutParams(-1,-1));
             if(editor.failed)workflowPage.addView(failedCard(),new FrameLayout.LayoutParams(-1,-1));
-            menu=new FloatingMenu(this,workflowPage,prefs);menu.setItems(menuItems());syncMenuState();
+            menu=new FloatingMenu(this,workflowPage,prefs);menu.setItems(menuItems());syncMenuState();menu.setAgentOpen(agentOpen);
             menu.setStatus(connection.getText().toString());menu.setTitle(workflowTitle);body.addView(workflowPage);menu.attached();
             if(!prefs.getBoolean("hint_v4",false)){prefs.edit().putBoolean("hint_v4",true).apply();message("双击提示词节点进入编辑；圆形按钮展开功能；做好工作流后可切到“简洁模式”出图");}
         }else if(index==PAGE_PROMPT){
@@ -264,7 +264,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     // No LAYOUT_STABLE: Android 10 must report zero insets once the bars are hidden, or the canvas keeps empty bands.
     private static final int EDGE_TO_EDGE=View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-    @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused&&page==PAGE_CANVAS&&editor!=null)fullScreen(true);}
+    @Override public void onWindowFocusChanged(boolean focused){super.onWindowFocusChanged(focused);if(focused&&page==PAGE_CANVAS&&editor!=null)fullScreen(!(agentOpen&&Build.VERSION.SDK_INT<30));}
 
     // ---------------- canvas menu ----------------
     private FloatingMenu.Item[] menuItems(){
@@ -274,6 +274,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
             new FloatingMenu.Item(STOP,false,false,this::interrupt),
             new FloatingMenu.Item("简洁模式",false,false,()->showPage(PAGE_SIMPLE)),
             new FloatingMenu.Item("提示词",false,false,()->showPage(PAGE_PROMPT)),
+            new FloatingMenu.Item("AI 助手",false,false,this::openAgent),
             new FloatingMenu.Item("工作流",false,false,this::workflowMenu),
             new FloatingMenu.Item("节点",false,false,nodes::list),
             new FloatingMenu.Item("添加",false,false,nodes::add),
@@ -311,7 +312,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     private void applyEditorSetup(){
         if(editor==null||setupPending||editor.loads==0||setupLoads==editor.loads)return;
         final EditorView source=editor;final int load=source.loads;setupPending=true;
-        JSONObject config=NodePanel.args("nativeDownloads",true,"hideInfo",true,"toolbar",prefs.getBoolean("canvas_toolbar",true),"selectionToolbox",prefs.getBoolean("selection_toolbox",false),"performance",prefs.getBoolean("performance",false));
+        JSONObject config=NodePanel.args("nativeDownloads",true,"hideInfo",true,"closeAgent",true,"agentButton",prefs.getBoolean("agent_button",false),"toolbar",prefs.getBoolean("canvas_toolbar",true),"selectionToolbox",prefs.getBoolean("selection_toolbox",false),"performance",prefs.getBoolean("performance",false));
         source.command("configure",config,c->{
             if(source!=editor)return;
             if(!c.optBoolean("ok")){setupPending=false;return;}
@@ -340,7 +341,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     private void more(){
         String[] items={"每次生成数量："+prefs.getInt("batch",1),"插队生成（排到最前）","导入工作流 JSON","导出工作流 JSON","导出上次导入前备份","查看实时预览","刷新编辑器",
-            "画布工具条："+(prefs.getBoolean("canvas_toolbar",true)?"显示":"隐藏"),"选中节点时的工具条："+(prefs.getBoolean("selection_toolbox",false)?"显示":"隐藏（避免挡住双击）"),"性能模式（缩小时简化绘制）："+(prefs.getBoolean("performance",false)?"开":"关"),
+            "画布工具条："+(prefs.getBoolean("canvas_toolbar",true)?"显示":"隐藏"),"选中节点时的工具条："+(prefs.getBoolean("selection_toolbox",false)?"显示":"隐藏（避免挡住双击）"),"AI 助手自带的悬浮按钮："+(prefs.getBoolean("agent_button",false)?"显示":"隐藏（从圆形菜单打开）"),"性能模式（缩小时简化绘制）："+(prefs.getBoolean("performance",false)?"开":"关"),
             "生成时保持亮屏："+(prefs.getBoolean("keep_awake",true)?"开":"关"),"后台完成通知："+(prefs.getBoolean("notify",true)?"开":"关"),"连接设置","屏幕跟随系统"};
         new AlertDialog.Builder(this).setTitle("更多").setItems(items,(d,index)->{
             switch(index){
@@ -357,11 +358,12 @@ public final class MainActivity extends Activity implements EditorView.Host {
                 case 6:new AlertDialog.Builder(this).setMessage("刷新会重新加载电脑端编辑器。请先保存尚未保存的工作流。").setPositiveButton("刷新",(dd,w)->{editor.web.reload();prompt.resetTarget();}).setNegativeButton("取消",null).show();break;
                 case 7:togglePref("canvas_toolbar",true);break;
                 case 8:togglePref("selection_toolbox",false);break;
-                case 9:togglePref("performance",false);break;
-                case 10:togglePref("keep_awake",true);keepAwake(running);break;
-                case 11:togglePref("notify",true);if(prefs.getBoolean("notify",true))GenerationWatch.askPermission(this);break;
-                case 12:showConnection();break;
-                case 13:prefs.edit().putString("orientation","system").apply();applyOrientation("system");break;
+                case 9:togglePref("agent_button",false);break;
+                case 10:togglePref("performance",false);break;
+                case 11:togglePref("keep_awake",true);keepAwake(running);break;
+                case 12:togglePref("notify",true);if(prefs.getBoolean("notify",true))GenerationWatch.askPermission(this);break;
+                case 13:showConnection();break;
+                case 14:prefs.edit().putString("orientation","system").apply();applyOrientation("system");break;
             }
         }).setNegativeButton("关闭",null).show();
     }
@@ -453,7 +455,21 @@ public final class MainActivity extends Activity implements EditorView.Host {
             handler.postDelayed(eventTick,page==PAGE_CANVAS&&idle<2500?120:running?400:page==PAGE_CANVAS?900:1200);
         });
     }};
+    /** Opens the ComfyUI-AgentLink chat inside the editor page; it lives on the canvas, so simple mode switches there first. */
+    void openAgent(){
+        if(editor==null)return;
+        if(page!=PAGE_CANVAS)showPage(PAGE_CANVAS);
+        editor.command("agent",NodePanel.args("action","open"),r->{if(!r.optBoolean("ok"))report(r);else setAgentOpen(true);});
+    }
+    private boolean agentOpen=false;
+    private void setAgentOpen(boolean open){
+        if(open==agentOpen)return;agentOpen=open;
+        if(menu!=null)menu.setAgentOpen(open);
+        // Android 10 ignores adjustResize in immersive mode, so the keyboard would cover the chat box; show the bars while chatting.
+        if(Build.VERSION.SDK_INT<30&&page==PAGE_CANVAS)fullScreen(!open);
+    }
     private void applyState(JSONObject state,EditorView source){
+        if(page==PAGE_CANVAS)setAgentOpen(state.optBoolean("agentOpen"));
         boolean busy=!state.isNull("running")||state.optInt("queueRemaining")>0;
         if(busy!=running)setRunning(busy);
         JSONObject p=state.optJSONObject("progress");

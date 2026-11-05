@@ -118,7 +118,7 @@ window.CM = (() => {
   async function setup() {
     if (!bridge || setupLoad === frameLoads) return;
     const load = frameLoads;
-    const config = await CM.command('configure', { hideInfo: true, toolbar: store.get('toolbar', true), selectionToolbox: store.get('selectionToolbox', false), performance: store.get('performance', false) });
+    const config = await CM.command('configure', { hideInfo: true, closeAgent: true, toolbar: store.get('toolbar', true), selectionToolbox: store.get('selectionToolbox', false), agentButton: store.get('agentButton', false), performance: store.get('performance', false) });
     if (!config.ok) return;
     const r = await CM.command('chrome', { focus: !store.get('webMenus', false) });
     if (r.ok) { setupLoad = load; emit('editorReady'); }
@@ -149,6 +149,8 @@ window.CM = (() => {
       const state = r.state || {};
       const busy = state.running != null || state.queueRemaining > 0;
       emit('state', state, busy);
+      // While the AI assistant's chat is open, the handle and progress chip step aside so they do not cover it.
+      document.body.classList.toggle('agent-open', !!state.agentOpen);
       if (busy !== CM.running) { CM.running = busy; emit('running', busy); }
       if (state.progress?.max > 0) {
         CM.progressText = (state.executingTitle ? state.executingTitle + ' · ' : '') + `采样 ${state.progress.value} / ${state.progress.max}` + (state.queueRemaining > 1 ? ` · 排队 ${state.queueRemaining - 1}` : '');
@@ -185,6 +187,12 @@ window.CM = (() => {
     const text = await response.text(); return text ? JSON.parse(text) : {};
   };
   CM.postJson = (path, body) => CM.api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  /** Opens the ComfyUI-AgentLink chat inside the editor; it lives on the canvas, so other pages give way first. */
+  CM.openAgent = async () => {
+    CM.showCanvas?.();
+    const r = await CM.command('agent', { action: 'open' });
+    if (CM.report(r)) document.body.classList.add('agent-open');
+  };
   CM.interrupt = async () => { try { await CM.postJson('/interrupt', {}); CM.toast('已请求电脑停止当前生成'); } catch (e) { CM.toast('停止失败：' + e.message); } };
   CM.mediaUrl = (o, preview) => `/api/view?${new URLSearchParams({ filename: o.filename, subfolder: o.subfolder || '', type: o.type || 'output', ...(preview ? { preview: 'webp' } : {}) })}`;
   CM.isVideo = name => /\.(mp4|m4v|webm|mov)$/i.test(name || '');
