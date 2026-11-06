@@ -14,6 +14,14 @@
   // AgentLink reopens its chat if it was open last time, possibly after this page's setup; on a phone it should open only
   // from the app menu, so a window the app did not ask for is closed for a short while after load.
   let agentQuietUntil = 0, agentRequested = false;
+  // AgentLink 0.4+ reports its chat on window, so simple mode can follow it without the chat window (images stay in the page).
+  window.addEventListener?.('agentlink:event', e => {
+    const d = e.detail || {};
+    events.push({ type: 'agent', data: { type: d.type, id: d.id, name: d.name, text: typeof d.text === 'string' ? d.text.slice(0, 1200) : undefined,
+      message: d.message, is_error: d.is_error, stopped: d.stopped } });
+    if (events.length > 400) events.splice(0, events.length - 400);
+  });
+  const agentState = () => { try { return window.AgentLink?.state?.() || null; } catch (ignored) { return null; } };
   function closeUnrequestedAgent() {
     if (agentRequested || Date.now() > agentQuietUntil || !agentOpen()) return;
     agentParts().launch?.click();
@@ -584,6 +592,12 @@
         targets.clear();return {ok:true};
       }
       case 'agent': {
+        if(['send','stop','newChat'].includes(args.action)){
+          const agent=window.AgentLink;
+          if(!agent?.send)throw new Error('电脑上的 AI 助手（ComfyUI-AgentLink）版本太旧，不支持在简洁模式直接对话。请更新插件并完全重启 ComfyUI');
+          if(args.action==='send'){const r=await agent.send(String(args.text||''));return {ok:true,session:r?.session??null};}
+          await (args.action==='stop'?agent.stop():agent.newChat());return {ok:true};
+        }
         const {launch,win}=agentParts();
         if(!launch||!win)throw new Error('电脑上没有加载 AI 助手（ComfyUI-AgentLink）。请确认已安装该插件，并完全重启 ComfyUI');
         const open=!win.hidden,want=args.action==='open'?true:args.action==='close'?false:args.action==='toggle'?!open:open;
@@ -628,7 +642,7 @@
     readField:async(target)=>{try{return {ok:true,value:lookup(target).widget.value};}catch(e){return fail(e);}},
     writeField:async(target,text)=>{try{return write(target,text,true);}catch(e){return fail(e);}},
     command:async(name,args)=>{try{hook();return await command(name,args);}catch(e){return fail(e);}},
-    drainEvents:async()=>{hook();closeUnrequestedAgent();return {ok:true,events:events.splice(0),state:{...state,progress:state.progress&&{...state.progress},agentOpen:agentOpen()}};},
+    drainEvents:async()=>{hook();closeUnrequestedAgent();return {ok:true,events:events.splice(0),state:{...state,progress:state.progress&&{...state.progress},agentOpen:agentOpen(),agentBusy:!!agentState()?.busy,agentSession:agentState()?.session??null}};},
     /** The latest sampler preview, converted only when the caller does not have this sequence yet. */
     preview:async(known)=>{
       try{

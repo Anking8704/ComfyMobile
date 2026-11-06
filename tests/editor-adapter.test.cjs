@@ -17,6 +17,10 @@ function fixture() {
   class FileReader { readAsDataURL(blob){ blob.arrayBuffer().then(b=>{this.result='data:'+(blob.type||'application/octet-stream')+';base64,'+Buffer.from(b).toString('base64');this.onload?.();}); } }
   const ctx = vm.createContext({ console, setTimeout, clearTimeout, document, Event, URL, Blob, TextDecoder, FileReader });
   ctx.window = ctx;
+  const windowEvents = new EventTarget();
+  ctx.addEventListener = windowEvents.addEventListener.bind(windowEvents);
+  ctx.dispatchEvent = windowEvents.dispatchEvent.bind(windowEvents);
+  ctx.CustomEvent = CustomEvent;
   const posted = [];
   const apiObject = { addEventListener(name,cb){listeners.set(name,cb);}, clientId:'phone', posted,
     responses: {}, async fetchApi(path, init) { if(init?.method==='POST'){posted.push({path,body:JSON.parse(init.body)});return {ok:true,json:async()=>({prompt_id:'new-id'})};} const r=this.responses[path]; return {ok:!!r,status:r?200:404,json:async()=>r}; } };
@@ -374,4 +378,33 @@ test('parameter presets are stored in the workflow and reapplied, without prompt
 test('a preset whose node was removed skips that value instead of writing elsewhere',async()=>{
   const {f}=linkedFixture();f.graph.extra={comfymobile:{presets:[{name:'旧',values:[{graphId:null,nodeId:99,name:'cfg',value:5}]}]}};
   const r=await f.bridge.command('applyPreset',{name:'旧'});assert.equal(r.applied,0);assert.equal(r.skipped,1);
+});
+
+test('AI assistant events reach the app without their images, and its busy state is reported',async()=>{
+  const f=fixture();
+  f.ctx.AgentLink={state:()=>({busy:true,session:'abc',open:false})};
+  f.ctx.dispatchEvent(new CustomEvent('agentlink:event',{detail:{type:'tool_call',id:'c1',name:'edit_canvas',arguments:{changes:{'5.text':'cat'}},session:'abc'}}));
+  f.ctx.dispatchEvent(new CustomEvent('agentlink:event',{detail:{type:'text',text:'画好了',session:'abc'}}));
+  const r=await f.bridge.drainEvents();
+  const agent=JSON.parse(JSON.stringify(r.events.filter(e=>e.type==='agent').map(e=>e.data)));
+  assert.deepEqual(agent.map(e=>e.type),['tool_call','text']);
+  assert.equal(agent[0].name,'edit_canvas'); assert.equal(agent[0].arguments,undefined);
+  assert.equal(agent[1].text,'画好了');
+  assert.equal(r.state.agentBusy,true); assert.equal(r.state.agentSession,'abc');
+});
+test('the app can send to and stop the AI assistant without opening its window',async()=>{
+  const f=fixture(),sent=[];let stopped=0;
+  f.ctx.AgentLink={send:async t=>{sent.push(t);return {session:'abc'};},stop:()=>{stopped++;},state:()=>({busy:false,session:'abc'})};
+  assert.equal((await f.bridge.command('agent',{action:'send',text:'换成夜景'})).ok,true);
+  assert.deepEqual(sent,['换成夜景']);
+  assert.equal((await f.bridge.command('agent',{action:'stop'})).ok,true);
+  assert.equal(stopped,1);
+  f.ctx.AgentLink.send=async()=>{throw new Error('AI 还在处理上一条消息');};
+  const busy=await f.bridge.command('agent',{action:'send',text:'x'});
+  assert.equal(busy.ok,false); assert.match(busy.error,/上一条/);
+});
+test('sending to an old AI assistant without the app interface explains the update',async()=>{
+  const f=fixture();
+  const r=await f.bridge.command('agent',{action:'send',text:'x'});
+  assert.equal(r.ok,false); assert.match(r.error,/更新/);
 });

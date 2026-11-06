@@ -59,7 +59,8 @@ public final class MainActivity extends Activity implements EditorView.Host {
     private ComfyClient client;
     private SharedPreferences prefs;
     private int page=0,returnPage=PAGE_CANVAS;
-    private boolean active=false,running=false;
+    private boolean active=false,running=false,agentBusy=false;
+    private String agentSession=null;
     private final SubmissionState submission=new SubmissionState();
     private static final String GENERATE="开始生成",STOP="停止生成";
     private Button orientationButton;
@@ -375,9 +376,13 @@ public final class MainActivity extends Activity implements EditorView.Host {
             });
         });
     }
+    /** Asks for the notification permission the first time something may finish while the app is in the background. */
+    void askNotifyOnce(){
+        if(prefs.getBoolean("notify",true)&&!prefs.getBoolean("asked_notify",false)){prefs.edit().putBoolean("asked_notify",true).apply();GenerationWatch.askPermission(this);}
+    }
     void generate(boolean front){
         final int epoch=submission.begin();if(epoch<0)return;
-        if(prefs.getBoolean("notify",true)&&!prefs.getBoolean("asked_notify",false)){prefs.edit().putBoolean("asked_notify",true).apply();GenerationWatch.askPermission(this);}
+        askNotifyOnce();
         syncMenuState();if(simple!=null)simple.setBusy(true);status("正在提交");
         editor.command("generate",NodePanel.args("batch",prefs.getInt("batch",1),"front",front),r->{
             if(!submission.finish(epoch))return;syncMenuState();if(simple!=null)simple.setBusy(false);
@@ -499,6 +504,7 @@ public final class MainActivity extends Activity implements EditorView.Host {
                 if(type.equals("edit_field")&&data!=null){editRequest=data;pickRequest=null;}
                 if(type.equals("pick_field")&&data!=null){pickRequest=data;editRequest=null;}
                 if(type.equals("download")&&data!=null)handleDownload(data);
+                if(type.equals("agent")&&data!=null&&simple!=null)simple.agentEvent(data);
             }
             if(completed){if(results!=null)results.refresh();if(simple!=null)simple.completed();refreshWorkflowTitle();}
             if(editRequest!=null&&page==PAGE_CANVAS&&source==editor)openEdit(source,editRequest);
@@ -526,6 +532,8 @@ public final class MainActivity extends Activity implements EditorView.Host {
     }
     private void applyState(JSONObject state,EditorView source){
         if(page==PAGE_CANVAS)setAgentOpen(state.optBoolean("agentOpen"));
+        agentBusy=state.optBoolean("agentBusy");agentSession=state.isNull("agentSession")?null:state.optString("agentSession",null);
+        if(simple!=null)simple.setAgentBusy(agentBusy);
         boolean busy=!state.isNull("running")||state.optInt("queueRemaining")>0;
         if(busy!=running)setRunning(busy);
         JSONObject p=state.optJSONObject("progress");
@@ -618,7 +626,8 @@ public final class MainActivity extends Activity implements EditorView.Host {
         // Keeps cookies such as the AI assistant's phone pairing even if the system ends the app right after.
         try{android.webkit.CookieManager.getInstance().flush();}catch(Exception ignored){}
         if(editor!=null)editor.web.onPause();
-        if(running&&server!=null&&prefs.getBoolean("notify",true))GenerationWatch.start(this,server.origin());
+        // Also while the AI assistant works: the service keeps the app alive, so the page can still carry out the AI's canvas steps.
+        if((running||agentBusy)&&server!=null&&prefs.getBoolean("notify",true))GenerationWatch.start(this,server.origin(),agentBusy?agentSession:null,running);
     }
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putInt("page",Math.max(0,page));prompt.persist();}
     @Override protected void onDestroy(){

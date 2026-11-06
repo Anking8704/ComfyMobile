@@ -23,12 +23,13 @@ final class ComfyClient {
     private final ServerConnection connection;
     ComfyClient(ServerAddress server){this.server=server;connection=new ServerConnection(server);}
 
-    private String cookie(){try{return CookieManager.getInstance().getCookie(server.origin());}catch(Exception e){return null;}}
-    private HttpURLConnection open(String path) throws IOException {return connection.open(path,cookie());}
-    byte[] bytes(String path,int max) throws IOException {return connection.bytes(path,max,cookie());}
+    /** The WebView's cookies for this path, including path-scoped ones such as the AI assistant's phone pairing on /agentlink. */
+    private String cookie(String path){try{return CookieManager.getInstance().getCookie(server.origin()+path);}catch(Exception e){return null;}}
+    private HttpURLConnection open(String path) throws IOException {return connection.open(path,cookie(path));}
+    byte[] bytes(String path,int max) throws IOException {return connection.bytes(path,max,cookie(path));}
     JSONObject json(String path) throws Exception{return new JSONObject(new String(bytes(path,12*1024*1024),StandardCharsets.UTF_8));}
     JSONObject post(String path,JSONObject body) throws Exception{
-        byte[] reply=connection.post(path,"application/json",body.toString().getBytes(StandardCharsets.UTF_8),4*1024*1024,cookie());
+        byte[] reply=connection.post(path,"application/json",body.toString().getBytes(StandardCharsets.UTF_8),4*1024*1024,cookie(path));
         String text=new String(reply,StandardCharsets.UTF_8).trim();
         return text.startsWith("{")?new JSONObject(text):new JSONObject();
     }
@@ -42,7 +43,7 @@ final class ComfyClient {
         if(mime==null||!mime.startsWith("image/"))throw new IOException("请选择 PNG、JPEG、WebP 或 GIF 图片");
         LinkedHashMap<String,String> fields=new LinkedHashMap<>();fields.put("type","input");fields.put("overwrite","false");
         Multipart body=new Multipart(fields,"image",MediaRef.safeName(filename),mime,data);
-        JSONObject reply=new JSONObject(new String(connection.post("/upload/image",body.contentType(),body.body,1024*1024,cookie()),StandardCharsets.UTF_8));
+        JSONObject reply=new JSONObject(new String(connection.post("/upload/image",body.contentType(),body.body,1024*1024,cookie("/upload/image")),StandardCharsets.UTF_8));
         String name=reply.getString("name"),sub=reply.optString("subfolder","");
         return sub.isEmpty()?name:sub+"/"+name;
     }

@@ -16,7 +16,9 @@ import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 
 /**
@@ -35,6 +37,15 @@ final class SimpleMode {
     private static final HashMap<String,String> SEED_MODES=new HashMap<>();
     static {SEED_MODES.put("fixed","固定");SEED_MODES.put("increment","递增");SEED_MODES.put("decrement","递减");SEED_MODES.put("randomize","每次随机");}
     private static final int[][] SIZES={{1024,1024},{832,1216},{1216,832},{768,1344},{1344,768},{512,768},{768,512}};
+    // What the AI assistant is doing, by tool, for the one-line status under its reply.
+    private static final HashMap<String,String> AGENT_STEPS=new HashMap<>();
+    static {
+        String[] pairs={"read_canvas","读取工作流","edit_canvas","修改参数","patch_canvas","修改工作流","undo_canvas","撤销修改","run_canvas","提交生成",
+            "get_job","等待出图","get_image","查看结果","list_models","查找模型","search_character_loras","查找角色 LoRA","describe_image","识别参考图","get_node_schema","查看节点选项"};
+        for(int i=0;i<pairs.length;i+=2)AGENT_STEPS.put(pairs[i],pairs[i+1]);
+    }
+    // After these the workflow on the phone has new values, so the controls are read again.
+    private static final HashSet<String> AGENT_EDITS=new HashSet<>(Arrays.asList("edit_canvas","patch_canvas","undo_canvas"));
 
     private final MainActivity activity;
     private final LinearLayout root,fields;
@@ -42,7 +53,10 @@ final class SimpleMode {
     private final LinearLayout progressPanel;
     private final android.widget.ProgressBar bar;
     private final ImageView result;
-    private final Button generate,stop;
+    private final Button generate,stop,agentSend;
+    private final android.widget.EditText agentInput;
+    private final TextView agentReply,agentStep;
+    private boolean agentBusy=false;
     private JSONArray current=new JSONArray(),presets=new JSONArray();
     private String source="auto";
     private int attempts=0;
@@ -91,6 +105,23 @@ final class SimpleMode {
             content.addView(Ui.scroll(a,fields),new LinearLayout.LayoutParams(-1,0,1));
         }
         root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
+
+        // AI bar: say what to change; the AI edits this workflow and generates. Its reply opens the full chat.
+        LinearLayout agentBox=Ui.column(a);agentBox.setPadding(0,Ui.dp(a,6),0,0);
+        agentReply=Ui.text(a,"",13,Ui.TEXT);agentReply.setMaxLines(4);agentReply.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        agentReply.setBackground(Ui.shape(a,Ui.SURFACE));Ui.pad(agentReply,8);agentReply.setVisibility(View.GONE);agentReply.setOnClickListener(v->a.openAgent());
+        agentBox.addView(agentReply);
+        agentStep=Ui.text(a,"",12,Ui.MUTED);agentStep.setSingleLine(true);agentStep.setEllipsize(android.text.TextUtils.TruncateAt.END);agentStep.setVisibility(View.GONE);
+        agentBox.addView(agentStep);
+        LinearLayout ask=Ui.row(a);
+        agentInput=Ui.input(a,"让 AI 改：例如“换成夜景，竖图”",false);agentInput.setTextSize(15);Ui.pad(agentInput,10);
+        agentInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
+        agentInput.setOnEditorActionListener((v,action,e)->{if(action==android.view.inputmethod.EditorInfo.IME_ACTION_SEND){agentSend();return true;}return false;});
+        ask.addView(agentInput,new LinearLayout.LayoutParams(0,Ui.dp(a,46),1));
+        agentSend=Ui.button(a,"发送",false,this::agentSend);
+        LinearLayout.LayoutParams sendParams=new LinearLayout.LayoutParams(-2,Ui.dp(a,46));sendParams.leftMargin=Ui.dp(a,6);ask.addView(agentSend,sendParams);
+        agentBox.addView(ask);
+        root.addView(agentBox);
 
         LinearLayout bottom=Ui.row(a);bottom.setPadding(0,Ui.dp(a,6),0,0);
         bottom.addView(Ui.button(a,"−",false,()->batch(-1)),new LinearLayout.LayoutParams(Ui.dp(a,44),Ui.dp(a,52)));
@@ -379,6 +410,42 @@ final class SimpleMode {
             if(!r.optBoolean("ok")){activity.report(r);return;}
             source=r.optString("source");current=r.optJSONArray("fields");if(current==null)current=new JSONArray();render();activity.refreshWorkflowTitle();
         });
+    }
+
+    // ---------------- AI assistant ----------------
+    private void agentSend(){
+        EditorView editor=activity.editor();if(editor==null)return;
+        if(agentBusy){editor.command("agent",NodePanel.args("action","stop"),r->{if(!r.optBoolean("ok"))activity.report(r);});return;}
+        String text=agentInput.getText().toString().trim();
+        if(text.isEmpty()){activity.message("先写下想让 AI 做什么");return;}
+        agentSend.setEnabled(false);
+        editor.command("agent",NodePanel.args("action","send","text",text),r->{
+            agentSend.setEnabled(true);
+            if(!r.optBoolean("ok")){activity.report(r);return;}
+            agentInput.setText("");Ui.hideKeyboard(activity,agentInput);activity.askNotifyOnce();
+            setAgentBusy(true);showAgentStep("AI 正在思考…");
+        });
+    }
+    /** Busy state from the page: the send button stops the AI while it works. */
+    void setAgentBusy(boolean busy){
+        if(busy==agentBusy)return;agentBusy=busy;agentSend.setText(busy?"停止":"发送");
+        if(!busy)agentStep.setVisibility(View.GONE);
+    }
+    /** One chat event from AgentLink (see the adapter's "agent" events). */
+    void agentEvent(JSONObject e){
+        String name=e.optString("name");
+        switch(e.optString("type")){
+            case "tool_call":showAgentStep("AI："+(AGENT_STEPS.containsKey(name)?AGENT_STEPS.get(name):"处理中")+"…");break;
+            case "tool_result":if(!e.optBoolean("is_error")&&AGENT_EDITS.contains(name))reload();break;
+            case "text":showAgentReply(e.optString("text"));break;
+            case "error":showAgentReply("出错了："+e.optString("message"));break;
+            case "done":if(e.optBoolean("stopped"))showAgentStep("已停止");else agentStep.setVisibility(View.GONE);break;
+        }
+    }
+    private void showAgentStep(String text){agentStep.setText(text);agentStep.setVisibility(View.VISIBLE);}
+    private void showAgentReply(String text){
+        if(text==null||text.trim().isEmpty())return;
+        agentReply.setText(text.trim()+"\n（点此打开完整对话）");agentReply.setVisibility(View.VISIBLE);
     }
 
     // ---------------- latest result ----------------
